@@ -140,14 +140,14 @@ export default function StepReview({
           <div className="border border-stone-200 rounded-xl p-5 space-y-4 bg-stone-50">
             <p className="text-sm font-semibold text-stone-700" style={{ fontFamily: "var(--font-dm-sans)" }}>
               What would you like to change?{" "}
-              <span className="font-normal text-stone-400">(English, বাংলা, or Español)</span>
+              <span className="font-normal text-stone-400">(English or your native language)</span>
             </p>
 
             <textarea
               value={refinement}
               onChange={(e) => setRefinement(e.target.value)}
               rows={3}
-              placeholder="e.g. Make it shorter / একটু ছোট করুন / Hazlo más corto"
+              placeholder="e.g. Make it shorter / একটু ছোট করুন"
               className="w-full border border-stone-200 rounded-xl p-3 text-sm text-stone-800 resize-y focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent bg-white"
             />
 

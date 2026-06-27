@@ -139,7 +139,7 @@ export default function Home() {
                 Write professional emails in English
               </h1>
               <p className="text-stone-500 text-sm">
-                Tell us what you want to say in Bangla or Spanish — we&apos;ll write it for you.
+                Tell us what you want to say in your language — we&apos;ll write it for you.
               </p>
             </div>
 
