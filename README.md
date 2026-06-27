@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bolo — Email Assistant for Immigrant Business Owners
 
-## Getting Started
+Bolo helps immigrant business owners who understand English well but struggle to write professional emails in it. Users speak or type their intent in Bangla or Spanish, and Bolo produces a polished, professional English email.
 
-First, run the development server:
+## How it works
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Bolo supports two modes:
+
+**Reply to an email** — Upload screenshots of an email you received. Bolo extracts the text, lets you correct any misreads, then asks what you want to say in your language. It generates a professional English reply that matches the formality of the original thread.
+
+**Write a new email** — No screenshots needed. Just describe who you're writing to and what you want to say in Bangla or Spanish. Bolo writes the email from scratch.
+
+In both modes, users can speak their response using the built-in voice input or type it. Once the email is generated, it can be copied, edited inline, or refined further by describing what to change — again in any language.
+
+## Key design decisions
+
+- **Local OCR** — Tesseract.js runs on the server to extract text from screenshots. No image tokens are sent to the AI, keeping costs near zero.
+- **Rule-based extraction** — Sender, dates, order numbers, and important terms are extracted with regex, not an AI call.
+- **Cross-language term handling** — English words embedded in Bangla/Spanish input (product names, order numbers, legal terms) are recognized as intentional references, not translation errors.
+- **AI fallback** — Gemini is the primary provider. If it fails (quota, 503), OpenAI takes over automatically with no interruption to the user.
+
+## Stack
+
+- Next.js 16 (App Router, TypeScript)
+- Tailwind CSS v4
+- Tesseract.js for OCR
+- Gemini (`gemini-2.5-flash-lite`) as primary AI, OpenAI (`gpt-4o-mini`) as automatic fallback
+- Web Speech API for voice input
+
+## Setup
+
+Copy `.env.example` to `.env.local` and fill in your API keys:
+
+```
+GEMINI_API_KEY=       # from aistudio.google.com/apikey (AI Studio key, not Cloud Console)
+AI_MODEL=gemini-2.5-flash-lite
+OPENAI_API_KEY=       # fallback provider
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then run:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> **First run:** Tesseract.js downloads a ~10MB language pack on first use. After that it's cached and runs in 1–3 seconds per image.
