@@ -10,6 +10,7 @@ interface Props {
 const LANGUAGES: { value: SupportedLanguage; label: string; sub: string }[] = [
   { value: "bn", label: "বাংলা", sub: "Bengali" },
   { value: "es", label: "Español", sub: "Spanish" },
+  { value: "gu", label: "ગુજરાતી", sub: "Gujarati" },
 ]
 
 export default function LanguageSelector({ value, onChange }: Props) {

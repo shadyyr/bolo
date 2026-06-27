@@ -1,4 +1,4 @@
-export type SupportedLanguage = "bn" | "es"
+export type SupportedLanguage = "bn" | "es" | "gu"
 
 export type EmailMode = "reply" | "compose"
 

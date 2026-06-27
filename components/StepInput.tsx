@@ -21,10 +21,12 @@ const PLACEHOLDERS: Record<EmailMode, Record<SupportedLanguage, string>> = {
   reply: {
     bn: "এখানে বাংলায় আপনার উত্তর লিখুন…",
     es: "Escribe tu respuesta aquí en español…",
+    gu: "અહીં ગુજરાતીમાં તમારો જવાબ લખો…",
   },
   compose: {
     bn: "বাংলায় লিখুন — কাকে লিখছেন এবং কী বলতে চান…",
     es: "Escribe en español — a quién le escribes y qué quieres decir…",
+    gu: "ગુજરાતીમાં લખો — કોને લખો છો અને શું કહેવું છે…",
   },
 }
 
