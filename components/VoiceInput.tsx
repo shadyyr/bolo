@@ -49,6 +49,7 @@ interface Props {
 const LANG_CODES: Record<SupportedLanguage, string> = {
   bn: "bn-BD",
   es: "es",
+  gu: "gu-IN",
 }
 
 const ERROR_MESSAGES: Record<string, string> = {

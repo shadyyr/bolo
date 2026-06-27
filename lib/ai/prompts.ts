@@ -10,6 +10,7 @@ const EXTRACT_RULES = `Critical rules:
 const LANGUAGE_NAMES: Record<string, string> = {
   bn: "Bangla (Bengali)",
   es: "Spanish",
+  gu: "Gujarati",
 }
 
 export function buildExtractPrompt(): string {

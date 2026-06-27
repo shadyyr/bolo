@@ -4,7 +4,7 @@ import type { EmailMode, GenerateEmailParams, SupportedLanguage } from "@/types"
 
 export const runtime = "nodejs"
 
-const SUPPORTED_LANGUAGES = new Set<SupportedLanguage>(["bn", "es"])
+const SUPPORTED_LANGUAGES = new Set<SupportedLanguage>(["bn", "es", "gu"])
 
 export async function POST(req: NextRequest) {
   let body: Partial<GenerateEmailParams>
