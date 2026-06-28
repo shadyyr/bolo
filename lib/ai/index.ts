@@ -6,34 +6,65 @@ export function getAdapter() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const gemini = require("./gemini").geminiAdapter as AIAdapter
   // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const claude = require("./claude").claudeAdapter as AIAdapter
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const openai = require("./openai").openaiAdapter as AIAdapter
 
-  async function tryWithFallback<T>(
-    primary: () => Promise<T>,
-    fallback: () => Promise<T>,
+  const PROVIDER_NAMES = {
+    gemini: process.env.AI_MODEL ?? "gemini-2.5-flash-lite",
+    claude: `${process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001"} (fallback)`,
+    openai: `${process.env.OPENAI_MODEL ?? "gpt-4o-mini"} (fallback)`,
+  }
+
+  async function tryInOrder<T>(
+    attempts: Array<{ fn: () => Promise<T>; providerKey: keyof typeof PROVIDER_NAMES }>,
     label: string
   ): Promise<T> {
-    try {
-      const result = await primary()
-      provider.name = process.env.AI_MODEL ?? "gemini-2.5-flash-lite"
-      return result
-    } catch (err) {
-      console.warn(`[ai] gemini failed on ${label}, falling back to openai:`, err instanceof Error ? err.message : String(err))
-      const result = await fallback()
-      provider.name = `${process.env.OPENAI_MODEL ?? "gpt-4o-mini"} (fallback)`
-      return result
+    let lastErr: unknown
+    for (const { fn, providerKey } of attempts) {
+      try {
+        const result = await fn()
+        provider.name = PROVIDER_NAMES[providerKey]
+        return result
+      } catch (err) {
+        lastErr = err
+        console.warn(
+          `[ai] ${PROVIDER_NAMES[providerKey]} failed on ${label}:`,
+          err instanceof Error ? err.message : String(err)
+        )
+      }
     }
+    throw lastErr
   }
 
   const adapter: AIAdapter = {
     extractEmail: (images) =>
-      tryWithFallback(() => gemini.extractEmail(images), () => openai.extractEmail(images), "extractEmail"),
+      tryInOrder([
+        { fn: () => gemini.extractEmail(images), providerKey: "gemini" },
+        { fn: () => claude.extractEmail(images), providerKey: "claude" },
+        { fn: () => openai.extractEmail(images), providerKey: "openai" },
+      ], "extractEmail"),
+
     extractEmailFromText: (rawText) =>
-      tryWithFallback(() => gemini.extractEmailFromText(rawText), () => openai.extractEmailFromText(rawText), "extractEmailFromText"),
+      tryInOrder([
+        { fn: () => gemini.extractEmailFromText(rawText), providerKey: "gemini" },
+        { fn: () => claude.extractEmailFromText(rawText), providerKey: "claude" },
+        { fn: () => openai.extractEmailFromText(rawText), providerKey: "openai" },
+      ], "extractEmailFromText"),
+
     generateEmail: (params) =>
-      tryWithFallback(() => gemini.generateEmail(params), () => openai.generateEmail(params), "generateEmail"),
+      tryInOrder([
+        { fn: () => gemini.generateEmail(params), providerKey: "gemini" },
+        { fn: () => claude.generateEmail(params), providerKey: "claude" },
+        { fn: () => openai.generateEmail(params), providerKey: "openai" },
+      ], "generateEmail"),
+
     refineEmail: (params) =>
-      tryWithFallback(() => gemini.refineEmail(params), () => openai.refineEmail(params), "refineEmail"),
+      tryInOrder([
+        { fn: () => gemini.refineEmail(params), providerKey: "gemini" },
+        { fn: () => claude.refineEmail(params), providerKey: "claude" },
+        { fn: () => openai.refineEmail(params), providerKey: "openai" },
+      ], "refineEmail"),
   }
 
   return { adapter, provider }

@@ -13,7 +13,7 @@ function getClient() {
 }
 
 function getModel() {
-  return process.env.AI_MODEL ?? "claude-haiku-4-5-20251001"
+  return process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001"
 }
 
 function parseJSON(text: string): unknown {
