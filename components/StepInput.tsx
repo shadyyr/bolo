@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { EmailMode, SupportedLanguage } from "@/types"
 import LanguageSelector from "./LanguageSelector"
 import VoiceInput from "./VoiceInput"
@@ -16,6 +16,8 @@ interface Props {
 }
 
 type Tab = "type" | "speak"
+
+const PLACEHOLDER_ORDER: SupportedLanguage[] = ["bn", "es", "gu"]
 
 const PLACEHOLDERS: Record<EmailMode, Record<SupportedLanguage, string>> = {
   reply: {
@@ -43,6 +45,26 @@ export default function StepInput({
   const [userInput, setUserInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [isFocused, setIsFocused] = useState(false)
+  const [placeholderIdx, setPlaceholderIdx] = useState(0)
+  const [placeholderVisible, setPlaceholderVisible] = useState(true)
+  const placeholderTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const allPlaceholders = PLACEHOLDER_ORDER.map((lang) => PLACEHOLDERS[mode][lang])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderVisible(false)
+      placeholderTimeoutRef.current = setTimeout(() => {
+        setPlaceholderIdx((i) => (i + 1) % allPlaceholders.length)
+        setPlaceholderVisible(true)
+      }, 300)
+    }, 5000)
+    return () => {
+      clearInterval(interval)
+      if (placeholderTimeoutRef.current) clearTimeout(placeholderTimeoutRef.current)
+    }
+  }, [allPlaceholders.length])
 
   const isReply = mode === "reply"
 
@@ -134,13 +156,23 @@ export default function StepInput({
         </div>
 
         {tab === "type" ? (
-          <textarea
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            rows={6}
-            placeholder={PLACEHOLDERS[mode][language]}
-            className="w-full border border-stone-200 rounded-xl p-4 text-sm text-stone-800 resize-y focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent bg-stone-50"
-          />
+          <div className="relative">
+            <textarea
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              rows={6}
+              className="w-full border border-stone-200 rounded-xl p-4 text-sm text-stone-800 resize-y focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent bg-stone-50"
+            />
+            {!userInput && !isFocused && (
+              <p
+                className={`absolute top-4 left-4 right-4 text-sm text-stone-400 pointer-events-none select-none transition-opacity duration-300 ${placeholderVisible ? "opacity-100" : "opacity-0"}`}
+              >
+                {allPlaceholders[placeholderIdx]}
+              </p>
+            )}
+          </div>
         ) : (
           <div className="space-y-4">
             <VoiceInput language={language} onTranscript={handleTranscript} />
