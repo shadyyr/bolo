@@ -50,6 +50,21 @@ const UI_LINE_PATTERNS = [
   // Outlook retention/compliance banner — always contains both "Retention:" and "Expires:"
   // e.g. "oO Retention: UCF Delete after 10 Years Expires: Tue 6/24/2036 2:35 PM"
   /\bretention:.*\bexpires:/i,
+
+  // Outlook "images blocked" security banner (and its Show content / Report buttons)
+  // e.g. "(i ] Images and scripts have been blocked. Show content | | Report Vv"
+  /\bimages and scripts have been blocked\b/i,
+  /^show content$/i,
+
+  // Reply/Forward buttons rendered with arrow icons (Outlook bottom toolbar)
+  // e.g. "< Reply > Forward"
+  /^[<←>→•]\s*reply(\s+all)?\s*[<←>→•]\s*forward$/i,
+
+  // Email notification footers (Canvas LMS, university systems, mailing lists)
+  // e.g. "View announcement | Update your notification settings"
+  /^view announcement\b/i,
+  /^update your notification settings$/i,
+  /^(unsubscribe|manage preferences|email preferences|notification settings)(\s*\|.*)?$/i,
 ]
 
 // iOS/Android status bar: starts with a time ("12:01", "9:41") and the rest contains
