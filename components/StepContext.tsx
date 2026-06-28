@@ -18,7 +18,7 @@ export default function StepContext({ emailContext, onConfirm, onBack }: Props) 
           Review extracted email
         </h2>
         <p className="mt-1 text-sm text-stone-500">
-          Check the text read from your screenshots. Correct any misread names, dates, or numbers before continuing.
+          Check the text read from your screenshot. Fix any misread names, dates, or numbers — you can ignore or delete any stray symbols or button labels.
         </p>
       </div>
 
@@ -29,6 +29,11 @@ export default function StepContext({ emailContext, onConfirm, onBack }: Props) 
         className="w-full border border-stone-200 rounded-xl p-4 text-sm text-stone-800 font-mono resize-y focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent bg-stone-50"
         spellCheck={false}
       />
+
+      <div className="rounded-xl bg-teal-50 border border-teal-100 px-4 py-3 text-sm text-teal-800 leading-relaxed">
+        <span className="font-semibold">Don&apos;t worry about stray characters.</span>{" "}
+        Email apps often leave behind button labels, icons, or status bar text that the scanner picks up. The system automatically filters most of it out — as long as the main email body looks correct above, your reply will be written accurately.
+      </div>
 
       <div className="flex gap-3">
         <button
