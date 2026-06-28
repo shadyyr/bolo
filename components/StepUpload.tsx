@@ -1,7 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import type { ExtractedEmailContext, UploadedImage } from "@/types"
+import { useRef, useState, useEffect } from "react"
+import { createWorker } from "tesseract.js"
+import { parseEmailText } from "@/lib/parse-email"
+import type { UploadedImage } from "@/types"
 
 interface Props {
   onAnalyzed: (context: string, importantTerms: string[]) => void
@@ -101,10 +103,11 @@ export default function StepUpload({ onAnalyzed, onBack }: Props) {
   const [files, setFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingStatus, setLoadingStatus] = useState("")
+  const [loadingProgress, setLoadingProgress] = useState(0)
   const [error, setError] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
   const dropRef = useRef<HTMLDivElement>(null)
-  // Mirror previews in a ref so the unmount cleanup always sees the latest URLs
   const previewsRef = useRef<string[]>([])
   previewsRef.current = previews
 
@@ -144,6 +147,8 @@ export default function StepUpload({ onAnalyzed, onBack }: Props) {
   async function handleAnalyze() {
     if (files.length === 0) return
     setLoading(true)
+    setLoadingStatus("Preparing images…")
+    setLoadingProgress(0)
     setError("")
 
     try {
@@ -153,43 +158,72 @@ export default function StepUpload({ onAnalyzed, onBack }: Props) {
         const sizeBytes = Math.ceil((img.data.length * 3) / 4)
         if (sizeBytes > MAX_SIZE_BYTES) {
           setError("One or more images are too large even after compression. Please use smaller screenshots.")
-          setLoading(false)
           return
         }
       }
 
-      const res = await fetch("/api/extract-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ images: prepared }),
+      const worker = await createWorker("eng", 1, {
+        logger: (m: { status: string; progress: number }) => {
+          if (m.status === "loading tesseract core") {
+            setLoadingStatus("Loading OCR engine…")
+            setLoadingProgress(Math.round(m.progress * 40))
+          } else if (m.status === "loading language traineddata") {
+            setLoadingStatus("Loading language data…")
+            setLoadingProgress(40 + Math.round(m.progress * 30))
+          } else if (m.status === "recognizing text") {
+            setLoadingStatus("Reading your email…")
+            setLoadingProgress(70 + Math.round(m.progress * 25))
+          }
+        },
       })
 
-      const data: ExtractedEmailContext & { error?: string } = await res.json()
+      try {
+        const texts: string[] = []
+        for (let i = 0; i < prepared.length; i++) {
+          if (prepared.length > 1) {
+            setLoadingStatus(`Reading screenshot ${i + 1} of ${prepared.length}…`)
+          }
+          const dataUri = `data:${prepared[i].mediaType};base64,${prepared[i].data}`
+          const { data } = await worker.recognize(dataUri)
+          if (data.text.trim()) texts.push(data.text.trim())
+        }
 
-      if (!res.ok || data.error) {
-        setError(data.error ?? "Failed to analyze email. Please try again.")
-        return
+        const rawText = texts.join("\n\n---\n\n")
+
+        if (!rawText.trim()) {
+          setError("Could not read any text from the screenshots. Please try a clearer image.")
+          return
+        }
+
+        setLoadingProgress(100)
+        const result = parseEmailText(rawText)
+        onAnalyzed(result.context, result.detectedDetails?.importantTerms ?? [])
+      } finally {
+        await worker.terminate()
       }
-
-      onAnalyzed(data.context, data.detectedDetails?.importantTerms ?? [])
     } catch {
       setError("Something went wrong. Please try again.")
     } finally {
       setLoading(false)
+      setLoadingProgress(0)
     }
   }
 
   return (
     <div className="relative">
-      {/* Loading overlay */}
       {loading && (
         <div className="absolute inset-0 -m-6 sm:-m-8 bg-white/90 backdrop-blur-sm rounded-2xl z-10 flex flex-col items-center justify-center gap-4">
           <div className="spinner" />
-          <div className="text-center">
+          <div className="text-center space-y-3">
             <p className="text-sm font-semibold text-stone-700" style={{ fontFamily: "var(--font-dm-sans)" }}>
-              Reading your email
+              {loadingStatus || "Preparing…"}
             </p>
-            <p className="text-xs text-stone-400 mt-0.5">Extracting text from screenshots…</p>
+            <div className="w-48 h-1.5 bg-stone-200 rounded-full overflow-hidden mx-auto">
+              <div
+                className="h-full bg-teal-600 rounded-full transition-all duration-300"
+                style={{ width: `${loadingProgress}%` }}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -204,7 +238,6 @@ export default function StepUpload({ onAnalyzed, onBack }: Props) {
           </p>
         </div>
 
-        {/* Drop zone */}
         <div
           ref={dropRef}
           onDrop={onDrop}
@@ -232,7 +265,6 @@ export default function StepUpload({ onAnalyzed, onBack }: Props) {
           />
         </div>
 
-        {/* Previews */}
         {previews.length > 0 && (
           <div className="flex flex-wrap gap-3">
             {previews.map((src, i) => (
