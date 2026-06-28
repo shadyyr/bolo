@@ -51,13 +51,13 @@ ${params.emailContext}
 KEY TERMS FROM THIS EMAIL THREAD (English terms the user may reference in their native language):
 ${termsLine}
 
-The user wrote their intended reply in ${languageName}. They may have embedded English words from the thread above — these are deliberate references to those terms, NOT translation mistakes.
+The user wrote their intended reply in ${languageName}. They may have embedded English words from the thread above — these are deliberate references to those terms, NOT translation mistakes. They may also use informal, colloquial, or slang expressions natural to ${languageName} — interpret these by their intended meaning in context, not literally.
 
-USER INPUT (${languageName}, may contain embedded English terms):
+USER INPUT (${languageName}, may contain embedded English terms and colloquial expressions):
 ${params.userInput}
 
 Instructions:
-1. Understand the user's full intent from their native-language input
+1. Understand the user's full intent from their native-language input, including any slang or colloquial phrasing
 2. Treat any English words matching the key terms above as intentional references to those concepts
 3. Write a professional, complete English email reply with an appropriate greeting and sign-off
 4. Match the formality level of the original email thread
@@ -72,13 +72,13 @@ function buildComposePrompt(params: GenerateEmailParams): string {
 
   return `You are an expert email assistant helping an immigrant business owner write a professional email in English.
 
-The user described in ${languageName} what they want to communicate. They may embed English words (names, job titles, business names, terms) — treat these as intentional references, not errors.
+The user described in ${languageName} what they want to communicate. Their input may mix ${languageName} with English — any English words appearing within ${languageName} sentences (names, company names, job titles, business terms, product names, prices stated in English) are intentional cross-language references, not translation mistakes. The user may also use informal, colloquial, or slang expressions in ${languageName} — interpret these by their natural meaning in context.
 
 USER DESCRIPTION (${languageName}):
 ${params.userInput}
 
 Instructions:
-1. Understand who the user wants to write to and what they want to communicate
+1. Understand who the user wants to write to and what they want to communicate, including any slang or colloquial phrasing
 2. Write a professional, complete English email with an appropriate greeting and sign-off
 3. Use a professional business tone appropriate for the context described
 4. If the user has not specified a recipient name, use a generic greeting (e.g., "Dear Sir or Madam," or "To Whom It May Concern,")
