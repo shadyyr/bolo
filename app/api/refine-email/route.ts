@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAdapter } from "@/lib/ai"
+import { detectPromptInjection } from "@/lib/detect-injection"
 import type { RefineEmailParams } from "@/types"
 
 export const runtime = "nodejs"
@@ -22,6 +23,11 @@ export async function POST(req: NextRequest) {
   }
   if (refinement.length > 2000) {
     return NextResponse.json({ error: "refinement must be under 2000 characters" }, { status: 400 })
+  }
+
+  const injectionError = detectPromptInjection(refinement)
+  if (injectionError) {
+    return NextResponse.json({ error: injectionError }, { status: 400 })
   }
 
   try {
