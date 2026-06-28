@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "userInput is required" }, { status: 400 })
   }
   if (!language || !SUPPORTED_LANGUAGES.has(language)) {
-    return NextResponse.json({ error: "language must be 'bn' or 'es'" }, { status: 400 })
+    return NextResponse.json({ error: "language must be 'bn', 'es', or 'gu'" }, { status: 400 })
   }
   if (userInput.length > 5000) {
     return NextResponse.json({ error: "userInput must be under 5000 characters" }, { status: 400 })

@@ -67,9 +67,13 @@ export default function StepReview({
   }
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(currentEmail)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    try {
+      await navigator.clipboard.writeText(currentEmail)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // clipboard access denied or unavailable — button stays in default state
+    }
   }
 
   return (

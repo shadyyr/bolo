@@ -97,7 +97,7 @@ ${params.emailContext}
 CURRENT EMAIL DRAFT:
 ${params.currentEmail}
 
-The user's refinement instruction may be in English, Bangla, or Spanish — accept any of these:
+The user's refinement instruction may be in any language — accept any of these:
 REFINEMENT INSTRUCTION:
 ${params.refinement}
 

@@ -20,16 +20,13 @@ export async function POST(req: NextRequest) {
   if (!refinement?.trim()) {
     return NextResponse.json({ error: "refinement is required" }, { status: 400 })
   }
-  if (!emailContext?.trim()) {
-    return NextResponse.json({ error: "emailContext is required" }, { status: 400 })
-  }
   if (refinement.length > 2000) {
     return NextResponse.json({ error: "refinement must be under 2000 characters" }, { status: 400 })
   }
 
   try {
     const { adapter, provider } = getAdapter()
-    const email = await adapter.refineEmail({ currentEmail, refinement, emailContext })
+    const email = await adapter.refineEmail({ currentEmail, refinement, emailContext: emailContext ?? "" })
     return NextResponse.json({ email, model: provider.name })
   } catch (err) {
     console.error("[refine-email]", err)

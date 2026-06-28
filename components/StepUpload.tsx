@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { ExtractedEmailContext, UploadedImage } from "@/types"
 
 interface Props {
@@ -31,7 +31,7 @@ async function prepareImage(file: File): Promise<UploadedImage> {
           const sizeBytes = Math.ceil((base64.length * 3) / 4)
 
           if (sizeBytes > MAX_SIZE_BYTES) {
-            compressToJpeg(img, width, height, resolve)
+            compressToJpeg(img, width, height, resolve, file.name)
           } else {
             resolve({
               data: base64,
@@ -58,9 +58,9 @@ async function prepareImage(file: File): Promise<UploadedImage> {
       const originalType = file.type as UploadedImage["mediaType"]
       canvas.toBlob(
         (blob) => {
-          if (!blob) return compressToJpeg(img, width, height, resolve)
+          if (!blob) return compressToJpeg(img, width, height, resolve, file.name)
           if (blob.size > MAX_SIZE_BYTES) {
-            compressToJpeg(img, width, height, resolve)
+            compressToJpeg(img, width, height, resolve, file.name)
           } else {
             const reader = new FileReader()
             reader.onload = () => {
@@ -85,7 +85,8 @@ function compressToJpeg(
   img: HTMLImageElement,
   width: number,
   height: number,
-  resolve: (v: UploadedImage) => void
+  resolve: (v: UploadedImage) => void,
+  name?: string
 ) {
   const canvas = document.createElement("canvas")
   canvas.width = width
@@ -93,7 +94,7 @@ function compressToJpeg(
   const ctx = canvas.getContext("2d")!
   ctx.drawImage(img, 0, 0, width, height)
   const base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1]
-  resolve({ data: base64, mediaType: "image/jpeg" })
+  resolve({ data: base64, mediaType: "image/jpeg", ...(name ? { name } : {}) })
 }
 
 export default function StepUpload({ onAnalyzed, onBack }: Props) {
@@ -103,6 +104,15 @@ export default function StepUpload({ onAnalyzed, onBack }: Props) {
   const [error, setError] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
   const dropRef = useRef<HTMLDivElement>(null)
+  // Mirror previews in a ref so the unmount cleanup always sees the latest URLs
+  const previewsRef = useRef<string[]>([])
+  previewsRef.current = previews
+
+  useEffect(() => {
+    return () => {
+      previewsRef.current.forEach((url) => URL.revokeObjectURL(url))
+    }
+  }, [])
 
   function addFiles(incoming: FileList | null) {
     if (!incoming) return
@@ -218,7 +228,7 @@ export default function StepUpload({ onAnalyzed, onBack }: Props) {
             accept="image/png,image/jpeg,image/webp"
             multiple
             className="hidden"
-            onChange={(e) => addFiles(e.target.files)}
+            onChange={(e) => { addFiles(e.target.files); e.target.value = "" }}
           />
         </div>
 

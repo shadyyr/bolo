@@ -11,6 +11,8 @@ interface Props {
   importantTerms: string[]
   language: SupportedLanguage
   onLanguageChange: (lang: SupportedLanguage) => void
+  userInput: string
+  onUserInputChange: (input: string) => void
   onGenerate: (email: string, model: string) => void
   onBack: () => void
 }
@@ -38,11 +40,12 @@ export default function StepInput({
   importantTerms,
   language,
   onLanguageChange,
+  userInput,
+  onUserInputChange,
   onGenerate,
   onBack,
 }: Props) {
   const [tab, setTab] = useState<Tab>("type")
-  const [userInput, setUserInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [isFocused, setIsFocused] = useState(false)
@@ -69,7 +72,7 @@ export default function StepInput({
   const isReply = mode === "reply"
 
   function handleTranscript(text: string) {
-    setUserInput((prev) => (prev ? prev + " " + text : text))
+    onUserInputChange(userInput ? userInput + " " + text : text)
   }
 
   async function handleGenerate() {
@@ -159,7 +162,7 @@ export default function StepInput({
           <div className="relative">
             <textarea
               value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
+              onChange={(e) => onUserInputChange(e.target.value)}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               rows={6}
@@ -181,7 +184,7 @@ export default function StepInput({
                 <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">Transcript (editable)</p>
                 <textarea
                   value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
+                  onChange={(e) => onUserInputChange(e.target.value)}
                   rows={4}
                   className="w-full border border-stone-200 rounded-xl p-4 text-sm text-stone-800 resize-y focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent bg-stone-50"
                 />

@@ -140,6 +140,15 @@ export default function VoiceInput({ language, onTranscript }: Props) {
     }
 
     recognitionRef.current = rec
+
+    return () => {
+      intendedStopRef.current = true
+      rec.onend = null  // prevent stale onend from interfering after language change or unmount
+      try { rec.stop() } catch { /* already stopped */ }
+      setRecording(false)
+      setInterim("")
+      finalRef.current = ""
+    }
   }, [language])
 
   if (unsupported) {
