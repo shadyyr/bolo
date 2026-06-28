@@ -9,16 +9,46 @@ interface Props {
 }
 
 const HEADER_PREFIX = /^(from|to|cc|bcc|subject|date|sent|received|reply-to):/i
+const EMAIL_IN_ANGLE = /<[^>]+@[^>]+>/
 const BODY_GREETING = /^(hi\b|hello\b|dear\b|hey\b|good\s+(morning|afternoon|evening)|to\s+whom)/i
 
 function findBodyStart(text: string): number {
   const lines = text.split("\n")
+  let lastHeaderLine = -1
+
   for (let i = 0; i < lines.length; i++) {
     const t = lines[i].trim()
-    if (t === "" || HEADER_PREFIX.test(t)) continue
+
+    if (t === "") {
+      if (lastHeaderLine >= 0) {
+        // Blank line ending the header block — skip extra blanks, return first content line
+        let j = i + 1
+        while (j < lines.length && lines[j].trim() === "") j++
+        return j < lines.length ? j : -1
+      }
+      continue
+    }
+
+    if (HEADER_PREFIX.test(t) || EMAIL_IN_ANGLE.test(t)) {
+      lastHeaderLine = i
+    } else if (lastHeaderLine >= 0) {
+      // Non-header line immediately after header lines (no blank separator) = body starts here
+      return i
+    }
+    // Non-header line before any header found (e.g. garbled pre-header) — keep scanning
+  }
+
+  // Headers found but file ended without a blank line or non-header
+  if (lastHeaderLine >= 0) return lastHeaderLine + 1
+
+  // No formal headers at all — fall back to heuristic
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim()
+    if (t === "") continue
     const wordCount = t.split(/\s+/).filter(Boolean).length
     if (BODY_GREETING.test(t) || wordCount >= 6) return i
   }
+
   return -1
 }
 
