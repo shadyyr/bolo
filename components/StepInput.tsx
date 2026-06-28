@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import type { EmailMode, SupportedLanguage } from "@/types"
+import { detectPromptInjection } from "@/lib/detect-injection"
 import LanguageSelector from "./LanguageSelector"
 import VoiceInput from "./VoiceInput"
 
@@ -77,6 +78,13 @@ export default function StepInput({
 
   async function handleGenerate() {
     if (!userInput.trim()) return
+
+    const injectionError = detectPromptInjection(userInput)
+    if (injectionError) {
+      setError(injectionError)
+      return
+    }
+
     setLoading(true)
     setError("")
 

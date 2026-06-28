@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAdapter } from "@/lib/ai"
+import { detectPromptInjection } from "@/lib/detect-injection"
 import type { EmailMode, GenerateEmailParams, SupportedLanguage } from "@/types"
 
 export const runtime = "nodejs"
@@ -24,6 +25,11 @@ export async function POST(req: NextRequest) {
   }
   if (userInput.length > 5000) {
     return NextResponse.json({ error: "userInput must be under 5000 characters" }, { status: 400 })
+  }
+
+  const injectionError = detectPromptInjection(userInput)
+  if (injectionError) {
+    return NextResponse.json({ error: injectionError }, { status: 400 })
   }
 
   const resolvedMode: EmailMode = mode === "compose" ? "compose" : "reply"
