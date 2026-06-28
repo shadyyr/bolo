@@ -23,6 +23,7 @@ export default function Home() {
   const [emailContext, setEmailContext] = useState("")
   const [importantTerms, setImportantTerms] = useState<string[]>([])
   const [language, setLanguage] = useState<SupportedLanguage>("bn")
+  const [userInput, setUserInput] = useState("")
   const [generatedEmail, setGeneratedEmail] = useState("")
   const [lastModel, setLastModel] = useState("")
 
@@ -31,6 +32,7 @@ export default function Home() {
     setStep("upload")
     setEmailContext("")
     setImportantTerms([])
+    setUserInput("")
     setGeneratedEmail("")
     setLastModel("")
   }
@@ -40,6 +42,7 @@ export default function Home() {
     setStep(m === "compose" ? "input" : "upload")
     setEmailContext("")
     setImportantTerms([])
+    setUserInput("")
     setGeneratedEmail("")
     setLastModel("")
   }
@@ -220,6 +223,8 @@ export default function Home() {
                   importantTerms={importantTerms}
                   language={language}
                   onLanguageChange={setLanguage}
+                  userInput={userInput}
+                  onUserInputChange={setUserInput}
                   onGenerate={(email, model) => {
                     setGeneratedEmail(email)
                     setLastModel(model)
