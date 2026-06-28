@@ -198,6 +198,7 @@ export default function Home() {
                     setImportantTerms(terms)
                     setStep("context")
                   }}
+                  onBack={() => setMode(null)}
                 />
               )}
 

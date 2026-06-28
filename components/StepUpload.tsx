@@ -5,6 +5,7 @@ import type { ExtractedEmailContext, UploadedImage } from "@/types"
 
 interface Props {
   onAnalyzed: (context: string, importantTerms: string[]) => void
+  onBack: () => void
 }
 
 const MAX_IMAGES = 3
@@ -95,7 +96,7 @@ function compressToJpeg(
   resolve({ data: base64, mediaType: "image/jpeg" })
 }
 
-export default function StepUpload({ onAnalyzed }: Props) {
+export default function StepUpload({ onAnalyzed, onBack }: Props) {
   const [files, setFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
@@ -252,10 +253,15 @@ export default function StepUpload({ onAnalyzed }: Props) {
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-stone-400">
-            Screenshots are not stored by this app.
-          </p>
+        <p className="text-xs text-stone-400">Screenshots are not stored by this app.</p>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onBack}
+            className="px-4 py-2.5 rounded-lg border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition-colors"
+          >
+            ← Back
+          </button>
           <button
             onClick={handleAnalyze}
             disabled={files.length === 0 || loading}
