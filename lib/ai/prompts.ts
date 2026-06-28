@@ -45,7 +45,7 @@ export function buildGeneratePrompt(params: GenerateEmailParams): string {
 
   return `You are an expert email assistant helping an immigrant business owner reply professionally in English.
 
-ORIGINAL EMAIL THREAD:
+ORIGINAL EMAIL THREAD (extracted via OCR from a screenshot — ignore any email client UI text such as button labels, navigation items, or page counts that may have been captured):
 ${params.emailContext}
 
 KEY TERMS FROM THIS EMAIL THREAD (English terms the user may reference in their native language):
