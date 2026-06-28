@@ -30,14 +30,70 @@ const UI_LINE_PATTERNS = [
   /^[←→↑↓‹›<>|·•—–\s]+$/,
   // "Back to …" navigation links (short — avoids catching real sentences)
   /^back to .{1,25}$/i,
+
+  // ── Mobile screenshot chrome (iOS Mail, Gmail app, Outlook app, Yahoo app) ──
+
+  // iOS/Android navigation bar: back arrow + truncated subject ending in "..."
+  // e.g. "< Need you to let me know what you feel qualifie..."
+  /^[<←«]\s*.{5,}\.{2,}$/,
+
+  // Mobile app tab bar / dock at bottom of screen
+  // e.g. "Mail Calendar Apps" or "Inbox Compose More"
+  /^(mail|calendar|apps?|contacts|messages|notes|settings|home|camera|photos|maps|safari|inbox|compose|more)\s+(mail|calendar|apps?|contacts|messages|notes|settings|home|camera|photos|maps|safari|inbox|compose|more)(\s+(mail|calendar|apps?|contacts|messages|notes|settings|home|camera|photos|maps|safari|inbox|compose|more))?$/i,
+
+  // ── Outlook desktop/web chrome ──
+
+  // Outlook Copilot AI button — OCR captures it on same line as subject
+  // e.g. "New Slack Group ALMAmyfriend E} Summarize this email"
+  /\bsummarize this email$/i,
+
+  // Outlook retention/compliance banner — always contains both "Retention:" and "Expires:"
+  // e.g. "oO Retention: UCF Delete after 10 Years Expires: Tue 6/24/2036 2:35 PM"
+  /\bretention:.*\bexpires:/i,
 ]
+
+// iOS/Android status bar: starts with a time ("12:01", "9:41") and the rest contains
+// no word of 4+ consecutive letters. Catches "12:01 •••• LTE" and "9:41 ▶▶▶"
+// but NOT "12:01 PM meeting" (7-letter word) or "Meeting at 9:41 AM" (starts with a letter).
+function isStatusBar(line: string): boolean {
+  return /^\d{1,2}:\d{2}/.test(line) && !/[a-zA-Z]{4,}/.test(line)
+}
+
+// Garbled OCR of icon toolbars: short line, no URLs, ≥2 special chars from
+// the set commonly produced by OCR-ing icons (e.g. "vreoyAl 8 W & gp @")
+function isGarbledToolbar(line: string): boolean {
+  if (line.length > 35 || /^https?:\/\//i.test(line)) return false
+  const specialCount = (line.match(/[\\\|@&\^\[\]{}~`]/g) ?? []).length
+  return specialCount >= 2
+}
+
+// Single non-letter characters are almost always OCR artifacts from icons.
+// Preserves "Hi", "OK", "Dr", "Mr" etc.
+function isSingleCharArtifact(line: string): boolean {
+  return line.length === 1 && !/[a-zA-Z]/.test(line)
+}
+
+// Very short lines (≤5 chars) that are mostly symbols — e.g. "\ »", "/!"
+// These are icon OCR artifacts that slip past isGarbledToolbar.
+function isShortSymbolLine(line: string): boolean {
+  if (line.length > 5) return false
+  const letters = (line.match(/[a-zA-Z]/g) ?? []).length
+  return letters / line.length < 0.5
+}
 
 function cleanOcrText(text: string): string {
   return text
     .split("\n")
     .filter(line => {
       const t = line.trim()
-      return t === "" || !UI_LINE_PATTERNS.some(p => p.test(t))
+      if (t === "") return true
+      return (
+        !UI_LINE_PATTERNS.some(p => p.test(t)) &&
+        !isStatusBar(t) &&
+        !isGarbledToolbar(t) &&
+        !isSingleCharArtifact(t) &&
+        !isShortSymbolLine(t)
+      )
     })
     .join("\n")
 }
