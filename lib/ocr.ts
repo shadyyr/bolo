@@ -1,8 +1,14 @@
+import path from "path"
 import { createWorker } from "tesseract.js"
 import type { UploadedImage } from "@/types"
 
 export async function ocrImages(images: UploadedImage[]): Promise<string> {
-  const worker = await createWorker("eng")
+  const worker = await createWorker("eng", 1, {
+    // Read language data from the bundled file instead of downloading from CDN.
+    // Eliminates the ~3MB download that caused slow cold starts on Vercel.
+    langPath: path.join(process.cwd(), "public", "tessdata"),
+    cachePath: "/tmp",
+  })
 
   try {
     const texts: string[] = []
