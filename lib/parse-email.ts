@@ -119,11 +119,17 @@ const SKIP_ACRONYMS = new Set([
 ])
 
 const SKIP_CAPITALIZED = new Set([
+  // Greetings / sign-offs
   "Dear", "Hello", "Hi", "Thank", "Thanks", "Best", "Kind", "Yours",
   "Sincerely", "Regards", "Warmly", "Cheers", "Please", "Note",
+  // Days / months
   "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
   "January", "February", "March", "April", "May", "June", "July",
   "August", "September", "October", "November", "December",
+  // Common sentence-starting words that are capitalized but not proper nouns
+  "The", "A", "An", "Your", "Our", "Their", "My", "His", "Her", "Its",
+  "This", "That", "These", "Those", "We", "You", "They", "He", "She",
+  "As", "If", "In", "On", "At", "To", "For", "Of", "With", "By", "All",
 ])
 
 export function parseEmailText(rawText: string): ExtractedEmailContext {
@@ -166,9 +172,14 @@ export function parseEmailText(rawText: string): ExtractedEmailContext {
   // "Student Scholar Program", "Small Business Administration", etc.
   const phrases = text.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b/g) ?? []
   for (const phrase of phrases) {
-    const words = phrase.split(" ")
-    if (!words.every(w => SKIP_CAPITALIZED.has(w))) {
-      importantTerms.push(phrase)
+    let words = phrase.split(" ")
+    // Trim leading sentence-starting words (e.g. "Your", "The") that got
+    // captured because they were capitalized at the start of a sentence
+    while (words.length > 1 && SKIP_CAPITALIZED.has(words[0])) {
+      words = words.slice(1)
+    }
+    if (words.length >= 2 && !words.every(w => SKIP_CAPITALIZED.has(w))) {
+      importantTerms.push(words.join(" "))
     }
   }
 
