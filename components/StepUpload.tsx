@@ -83,7 +83,10 @@ async function prepareImage(file: File): Promise<UploadedImage> {
       )
     }
 
-    img.onerror = reject
+    img.onerror = (e) => {
+      URL.revokeObjectURL(url)
+      reject(e)
+    }
     img.src = url
   })
 }
@@ -99,6 +102,10 @@ function compressToJpeg(
   canvas.width = width
   canvas.height = height
   const ctx = canvas.getContext("2d")!
+  // JPEG has no alpha channel — without this, transparent PNG pixels render
+  // black and Tesseract can't read dark text on the result
+  ctx.fillStyle = "#fff"
+  ctx.fillRect(0, 0, width, height)
   ctx.drawImage(img, 0, 0, width, height)
   const base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1]
   resolve({ data: base64, mediaType: "image/jpeg", ...(name ? { name } : {}) })
@@ -165,6 +172,11 @@ export default function StepUpload({ files, previews, onFilesChange, onAnalyzed,
         }
       }
 
+      // Read by the logger so the recognition band (70–95%) advances across
+      // all images instead of snapping back to 70% for each one
+      let ocrImage = 0
+      const ocrTotal = prepared.length
+
       const worker = await createWorker("eng", 1, {
         logger: (m: { status: string; progress: number }) => {
           if (m.status === "loading tesseract core") {
@@ -174,8 +186,12 @@ export default function StepUpload({ files, previews, onFilesChange, onAnalyzed,
             setLoadingStatus("Loading language data…")
             setLoadingProgress(40 + Math.round(m.progress * 30))
           } else if (m.status === "recognizing text") {
-            setLoadingStatus("Reading your email…")
-            setLoadingProgress(70 + Math.round(m.progress * 25))
+            setLoadingStatus(
+              ocrTotal > 1
+                ? `Reading screenshot ${ocrImage + 1} of ${ocrTotal}…`
+                : "Reading your email…"
+            )
+            setLoadingProgress(70 + Math.round(((ocrImage + m.progress) / ocrTotal) * 25))
           }
         },
       })
@@ -183,9 +199,7 @@ export default function StepUpload({ files, previews, onFilesChange, onAnalyzed,
       try {
         const texts: string[] = []
         for (let i = 0; i < prepared.length; i++) {
-          if (prepared.length > 1) {
-            setLoadingStatus(`Reading screenshot ${i + 1} of ${prepared.length}…`)
-          }
+          ocrImage = i
           const dataUri = `data:${prepared[i].mediaType};base64,${prepared[i].data}`
           const { data } = await worker.recognize(dataUri)
           if (data.text.trim()) texts.push(data.text.trim())

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import type { SupportedLanguage } from "@/types"
 import VoiceInput from "./VoiceInput"
 
@@ -29,7 +29,9 @@ export default function StepReview({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [copied, setCopied] = useState(false)
+  const [copyError, setCopyError] = useState("")
   const [lastModel, setLastModel] = useState(initialModel)
+  const emailRef = useRef<HTMLTextAreaElement>(null)
 
   function handleVoiceRefinement(text: string) {
     setRefinement((prev) => (prev ? prev + " " + text : text))
@@ -67,12 +69,17 @@ export default function StepReview({
   }
 
   async function handleCopy() {
+    setCopyError("")
     try {
       await navigator.clipboard.writeText(currentEmail)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // clipboard access denied or unavailable — button stays in default state
+      // navigator.clipboard is unavailable in non-secure contexts and some
+      // in-app webviews — select the text so a manual copy is one keystroke,
+      // and tell the user instead of failing silently
+      emailRef.current?.select()
+      setCopyError("Couldn't copy automatically — the email text is selected, press Ctrl+C (or long-press) to copy it.")
     }
   }
 
@@ -102,6 +109,7 @@ export default function StepReview({
         </div>
 
         <textarea
+          ref={emailRef}
           value={currentEmail}
           onChange={(e) => setCurrentEmail(e.target.value)}
           rows={12}
@@ -139,6 +147,12 @@ export default function StepReview({
             {refineOpen ? "Cancel" : "Refine email"}
           </button>
         </div>
+
+        {copyError && (
+          <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            {copyError}
+          </div>
+        )}
 
         {refineOpen && (
           <div className="border border-stone-200 rounded-xl p-5 space-y-4 bg-stone-50">
