@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAdapter } from "@/lib/ai"
 import { detectPromptInjection } from "@/lib/detect-injection"
+import { invalidStringField, sanitizeTerms } from "@/lib/validate"
 import type { EmailMode, GenerateEmailParams, SupportedLanguage } from "@/types"
 
 export const runtime = "nodejs"
@@ -17,17 +18,21 @@ export async function POST(req: NextRequest) {
 
   const { emailContext, importantTerms, userInput, language, mode } = body
 
-  if (!userInput?.trim()) {
-    return NextResponse.json({ error: "userInput is required" }, { status: 400 })
+  const fieldError =
+    invalidStringField(userInput, "userInput", { required: true, maxLength: 5000 }) ??
+    invalidStringField(emailContext, "emailContext", { maxLength: 20000 })
+  if (fieldError) {
+    return NextResponse.json({ error: fieldError }, { status: 400 })
   }
   if (!language || !SUPPORTED_LANGUAGES.has(language)) {
     return NextResponse.json({ error: "language must be 'bn', 'es', or 'gu'" }, { status: 400 })
   }
-  if (userInput.length > 5000) {
-    return NextResponse.json({ error: "userInput must be under 5000 characters" }, { status: 400 })
+  const terms = sanitizeTerms(importantTerms)
+  if (!Array.isArray(terms)) {
+    return NextResponse.json({ error: terms.error }, { status: 400 })
   }
 
-  const injectionError = detectPromptInjection(userInput)
+  const injectionError = detectPromptInjection(userInput as string)
   if (injectionError) {
     return NextResponse.json({ error: injectionError }, { status: 400 })
   }
@@ -42,8 +47,8 @@ export async function POST(req: NextRequest) {
     const { adapter, provider } = getAdapter()
     const email = await adapter.generateEmail({
       emailContext: emailContext ?? "",
-      importantTerms: importantTerms ?? [],
-      userInput,
+      importantTerms: terms,
+      userInput: userInput as string,
       language,
       mode: resolvedMode,
     })

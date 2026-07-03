@@ -44,7 +44,13 @@ async function generateText(prompt: string, images?: UploadedImage[]): Promise<s
     messages: [{ role: "user", content }],
   })
 
-  return response.choices[0]?.message?.content ?? ""
+  // Refusals / empty choices should surface as an error, not succeed as an
+  // empty email
+  const text = response.choices[0]?.message?.content ?? ""
+  if (!text.trim()) {
+    throw new Error("empty response from model")
+  }
+  return text
 }
 
 export const openaiAdapter: AIAdapter = {

@@ -38,7 +38,13 @@ async function generateText(prompt: string, imageParts?: UploadedImage[]): Promi
     contents: [{ role: "user", parts }],
   })
 
-  return response.text ?? ""
+  // Safety blocks / empty candidates yield undefined text — throw so the
+  // fallback chain fires instead of returning a "successful" empty email
+  const text = response.text ?? ""
+  if (!text.trim()) {
+    throw new Error("empty response from model")
+  }
+  return text
 }
 
 export const geminiAdapter: AIAdapter = {

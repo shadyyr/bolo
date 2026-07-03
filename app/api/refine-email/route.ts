@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAdapter } from "@/lib/ai"
 import { detectPromptInjection } from "@/lib/detect-injection"
+import { invalidStringField } from "@/lib/validate"
 import type { RefineEmailParams } from "@/types"
 
 export const runtime = "nodejs"
@@ -15,24 +16,26 @@ export async function POST(req: NextRequest) {
 
   const { currentEmail, refinement, emailContext } = body
 
-  if (!currentEmail?.trim()) {
-    return NextResponse.json({ error: "currentEmail is required" }, { status: 400 })
-  }
-  if (!refinement?.trim()) {
-    return NextResponse.json({ error: "refinement is required" }, { status: 400 })
-  }
-  if (refinement.length > 2000) {
-    return NextResponse.json({ error: "refinement must be under 2000 characters" }, { status: 400 })
+  const fieldError =
+    invalidStringField(currentEmail, "currentEmail", { required: true, maxLength: 10000 }) ??
+    invalidStringField(refinement, "refinement", { required: true, maxLength: 2000 }) ??
+    invalidStringField(emailContext, "emailContext", { maxLength: 20000 })
+  if (fieldError) {
+    return NextResponse.json({ error: fieldError }, { status: 400 })
   }
 
-  const injectionError = detectPromptInjection(refinement)
+  const injectionError = detectPromptInjection(refinement as string)
   if (injectionError) {
     return NextResponse.json({ error: injectionError }, { status: 400 })
   }
 
   try {
     const { adapter, provider } = getAdapter()
-    const email = await adapter.refineEmail({ currentEmail, refinement, emailContext: emailContext ?? "" })
+    const email = await adapter.refineEmail({
+      currentEmail: currentEmail as string,
+      refinement: refinement as string,
+      emailContext: emailContext ?? "",
+    })
     return NextResponse.json({ email, model: provider.name })
   } catch (err) {
     console.error("[refine-email]", err)
