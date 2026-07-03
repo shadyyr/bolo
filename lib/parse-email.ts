@@ -28,8 +28,9 @@ const UI_LINE_PATTERNS = [
   /^\d+\s+(messages?|emails?|conversations?)$/i,
   // Standalone separator/arrow symbols with no other text
   /^[←→↑↓‹›<>|·•—–\s]+$/,
-  // "Back to …" navigation links (short — avoids catching real sentences)
-  /^back to .{1,25}$/i,
+  // "Back to …" navigation links — restricted to known mail folders/views so
+  // real sentences like "Back to you soon!" are never stripped
+  /^back to (?:inbox|message list|messages|mail|all mail|sent|drafts|spam|junk|trash|archive|folders?|search(?: results)?|top|list)$/i,
 
   // ── Mobile screenshot chrome (iOS Mail, Gmail app, Outlook app, Yahoo app) ──
 
@@ -45,7 +46,8 @@ const UI_LINE_PATTERNS = [
 
   // Outlook Copilot AI button — OCR captures it on same line as subject
   // e.g. "New Slack Group ALMAmyfriend E} Summarize this email"
-  /\bsummarize this email$/i,
+  // Lookbehind keeps real requests like "Please summarize this email" intact.
+  /(?<!\b(?:please|kindly|to|you|can|could|would)\s)\bsummarize this email$/i,
 
   // Outlook retention/compliance banner — always contains both "Retention:" and "Expires:"
   // e.g. "oO Retention: UCF Delete after 10 Years Expires: Tue 6/24/2036 2:35 PM"
@@ -67,33 +69,44 @@ const UI_LINE_PATTERNS = [
   /^(unsubscribe|manage preferences|email preferences|notification settings)(\s*\|.*)?$/i,
 ]
 
-// iOS/Android status bar: starts with a time ("12:01", "9:41") and the rest contains
-// no word of 4+ consecutive letters. Catches "12:01 •••• LTE" and "9:41 ▶▶▶"
-// but NOT "12:01 PM meeting" (7-letter word) or "Meeting at 9:41 AM" (starts with a letter).
+// iOS/Android status bar: starts with a time ("12:01", "9:41"), contains no
+// real word (4+ letters, any script), AND shows actual status-bar junk —
+// signal/battery glyphs or a carrier token. Catches "12:01 •••• LTE" and
+// "9:41 ▶▶▶" but NOT time-range lines like "9:30 AM - 5 PM" or
+// "12:45 নাগাদ আসবেন" (real word in any script rescues the line).
 function isStatusBar(line: string): boolean {
-  return /^\d{1,2}:\d{2}/.test(line) && !/[a-zA-Z]{4,}/.test(line)
+  if (!/^\d{1,2}:\d{2}/.test(line)) return false
+  if (/\p{L}{4,}/u.test(line)) return false
+  return /[•●○◦▪■▶◀►◄…]|%|\b(?:LTE|5G|4G|3G|GPRS|EDGE|WiFi|Wi-Fi)\b/i.test(line)
 }
 
 // Garbled OCR of icon toolbars: short line, no URLs, ≥2 special chars from
-// the set commonly produced by OCR-ing icons (e.g. "vreoyAl 8 W & gp @")
+// the set commonly produced by OCR-ing icons (e.g. "vreoyAl [] W ^ gp @").
+// Email addresses ("To: a@x.com, b@y.com") and "A & B" company names
+// legitimately contain @ and &, so those are excluded before counting.
 function isGarbledToolbar(line: string): boolean {
   if (line.length > 35 || /^https?:\/\//i.test(line)) return false
-  const specialCount = (line.match(/[\\\|@&\^\[\]{}~`]/g) ?? []).length
+  const stripped = line
+    .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, "")
+    .replace(/\s&\s/g, " ")
+  const specialCount = (stripped.match(/[\\\|@&\^\[\]{}~`]/g) ?? []).length
   return specialCount >= 2
 }
 
 // Single non-letter characters are almost always OCR artifacts from icons.
-// Preserves "Hi", "OK", "Dr", "Mr" etc.
+// Preserves "Hi", "OK", "Dr", "Mr" and single letters in any script.
 function isSingleCharArtifact(line: string): boolean {
-  return line.length === 1 && !/[a-zA-Z]/.test(line)
+  return line.length === 1 && !/\p{L}/u.test(line)
 }
 
 // Very short lines (≤5 chars) that are mostly symbols — e.g. "\ »", "/!"
 // These are icon OCR artifacts that slip past isGarbledToolbar.
+// Letters (any script) and digits count as content, so "$500", "নাম", and
+// "ટીમ" are preserved.
 function isShortSymbolLine(line: string): boolean {
   if (line.length > 5) return false
-  const letters = (line.match(/[a-zA-Z]/g) ?? []).length
-  return letters / line.length < 0.5
+  const content = (line.match(/[\p{L}\p{N}]/gu) ?? []).length
+  return content / line.length < 0.5
 }
 
 function cleanOcrText(text: string): string {
@@ -130,6 +143,8 @@ const SKIP_CAPITALIZED = new Set([
   "The", "A", "An", "Your", "Our", "Their", "My", "His", "Her", "Its",
   "This", "That", "These", "Those", "We", "You", "They", "He", "She",
   "As", "If", "In", "On", "At", "To", "For", "Of", "With", "By", "All",
+  // Relative days
+  "Today", "Tomorrow", "Yesterday", "Tonight",
 ])
 
 export function parseEmailText(rawText: string): ExtractedEmailContext {
@@ -140,10 +155,12 @@ export function parseEmailText(rawText: string): ExtractedEmailContext {
 
   // Dates: MM/DD/YYYY, Month DD YYYY, DD Month YYYY, abbreviated months
   const datePatterns = [
-    /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/g,
+    // Both leading parts capped at 31 so ID fragments like "12-34-5678" don't
+    // parse as dates; accepts MM/DD and DD/MM orderings.
+    /\b(?:0?[1-9]|[12]\d|3[01])[\/\-](?:0?[1-9]|[12]\d|3[01])[\/\-]\d{2,4}\b/g,
     /\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}\b/gi,
     /\b\d{1,2}(?:st|nd|rd|th)?\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}\b/gi,
-    /\b(?:Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d{1,2},?\s+\d{4}\b/gi,
+    /\b(?:Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept?|Oct|Nov|Dec)\.?\s+\d{1,2},?\s+\d{4}\b/gi,
   ]
 
   const dates: string[] = []
@@ -156,15 +173,21 @@ export function parseEmailText(rawText: string): ExtractedEmailContext {
     /#\d[\d\-]*/g,
     /\bOrder\s+(?:#\s*)?\d+\b/gi,
     /\bInvoice\s+(?:#\s*)?\d+\b/gi,
-    /\bRef(?:erence)?\s+(?:#\s*)?[\w\-]+\b/gi,
-    /\bCase\s+(?:#\s*)?[\w\-]+\b/gi,
-    /\bTicket\s+(?:#\s*)?[\w\-]+\b/gi,
+    // The lookahead requires at least one digit in the ID, so prose like
+    // "in case you missed it" or "the reference for this" never matches.
+    /\bRef(?:erence)?\s+(?:#\s*)?(?=[\w\-]*\d)[\w\-]+\b/gi,
+    /\bCase\s+(?:#\s*)?(?=[\w\-]*\d)[\w\-]+\b/gi,
+    /\bTicket\s+(?:#\s*)?(?=[\w\-]*\d)[\w\-]+\b/gi,
   ]
 
-  const orderNumbers: string[] = []
+  let orderNumbers: string[] = []
   for (const pattern of orderPatterns) {
     orderNumbers.push(...(text.match(pattern) ?? []).map(m => m.trim()))
   }
+  // Drop entries contained in a longer entry ("#12345" when "Order #12345" exists)
+  orderNumbers = orderNumbers.filter(
+    (n, i) => !orderNumbers.some((other, j) => j !== i && other.includes(n) && other !== n)
+  )
 
   // Important terms: multi-word capitalized phrases + all-caps acronyms
   const importantTerms: string[] = []
@@ -173,18 +196,22 @@ export function parseEmailText(rawText: string): ExtractedEmailContext {
   const phrases = text.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b/g) ?? []
   for (const phrase of phrases) {
     let words = phrase.split(" ")
-    // Trim leading sentence-starting words (e.g. "Your", "The") that got
-    // captured because they were capitalized at the start of a sentence
+    // Trim leading and trailing sentence words (e.g. "Your", "The", "As",
+    // "Tomorrow") that got captured because they happened to be capitalized
     while (words.length > 1 && SKIP_CAPITALIZED.has(words[0])) {
       words = words.slice(1)
+    }
+    while (words.length > 1 && SKIP_CAPITALIZED.has(words[words.length - 1])) {
+      words = words.slice(0, -1)
     }
     if (words.length >= 2 && !words.every(w => SKIP_CAPITALIZED.has(w))) {
       importantTerms.push(words.join(" "))
     }
   }
 
-  // "LLC", "IRS", "SBA", etc.
-  const acronyms = text.match(/\b[A-Z]{2,}\b/g) ?? []
+  // "LLC", "IRS", "SBA", etc. The lookbehind skips fragments after an
+  // apostrophe ("I'LL" would otherwise yield "LL")
+  const acronyms = text.match(/(?<!['’])\b[A-Z]{2,}\b/g) ?? []
   for (const word of acronyms) {
     if (!SKIP_ACRONYMS.has(word)) {
       importantTerms.push(word)

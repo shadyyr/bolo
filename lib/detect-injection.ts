@@ -1,26 +1,39 @@
+// Screens user input for prompt-injection phrasing before it reaches the AI.
+//
+// Design bias: never block legitimate email content. Users dictate real business
+// emails here — "please disregard my previous instructions", "instead, give me a
+// full refund", "from now on you must submit timesheets" are all things people
+// legitimately want written INTO an email. A missed injection only affects the
+// requester's own single-shot generation, so a false negative is far cheaper
+// than a false positive that blocks a real user.
 const INJECTION_PATTERNS: RegExp[] = [
-  // Instruction overriding
-  /\bignore\s+(?:the\s+|your\s+|all\s+|my\s+|above\s+|previous\s+|these\s+|any\s+)?(?:instructions?|prompt|system|rules?|guidelines?|context|above)\b/i,
-  /\bdisregard\s+(?:the\s+|your\s+|all\s+|my\s+|above\s+|previous\s+|these\s+|any\s+)?(?:instructions?|prompt|system|rules?|guidelines?|above)\b/i,
-  /\bforget\s+(?:the\s+|your\s+|all\s+|my\s+|above\s+|previous\s+|these\s+|any\s+)?(?:instructions?|prompt|system|rules?|guidelines?|everything)\b/i,
-  /\boverride\s+(?:the\s+|your\s+|all\s+)?(?:instructions?|prompt|system|rules?|guidelines?)\b/i,
-  /\bbypass\s+(?:the\s+|your\s+|all\s+)?(?:instructions?|prompt|system|rules?|guidelines?|restrictions?|filters?)\b/i,
+  // Instruction overriding: "ignore all previous instructions", "disregard the
+  // above rules", "forget everything above", "bypass your restrictions".
+  // The modifier group repeats (*) so multi-word chains like "all previous" match.
+  // "my" is deliberately not a modifier: "disregard my previous instructions and
+  // ship to the new address" is a real business email.
+  /\b(?:ignore|disregard|forget|override|bypass)\s+(?:(?:the|your|all|any|these|those|of|previous|prior|earlier|above)\s+)*(?:instructions?|prompts?|rules?|guidelines?|restrictions?|filters?|(?:system\s+)?prompt|everything\s+(?:above|before))\b/i,
 
-  // Role / persona injection
+  // Prompt extraction
+  /\b(?:reveal|show|print|output|repeat|display)\s+(?:your|the)\s+(?:system\s+)?(?:prompt|instructions?)\b/i,
+
+  // Role / persona injection — scoped to AI personas so email content like
+  // "you are now a member of our alumni club" or "you are my assistant for
+  // scheduling" is never blocked.
   /\bpretend\s+(?:to\s+be|you\s+are|you're)\b/i,
-  /\byou\s+are\s+now\s+(?:a\b|an\b|the\b|my\b)/i,
-  /\byour\s+(?:new|updated|revised)\s+(?:instructions?|role|task|persona|job)\s+(?:are|is)\b/i,
+  /\byou\s+are\s+(?:now\s+)?(?:a\s+|an\s+)?(?:different\s+)?(?:ai\b|chatbot|language\s+model|llm\b|helpful\s+assistant)/i,
+  /\byour\s+(?:new|updated|revised)\s+(?:instructions?|persona|system\s+prompt)\s+(?:are|is)\b/i,
   /\b(?:new|updated)\s+(?:system\s+)?prompt\s*:/i,
-  /\bfrom\s+now\s+on[,\s]+(?:you|act|be|respond|write|do|generate|ignore|forget)\b/i,
+  /\bfrom\s+now\s+on[,\s]+(?:you\s+are|act\s+as)\s+(?:a\s+|an\s+)?(?:ai\b|assistant|chatbot|bot\b|model|dan\b)/i,
 
-  // Task hijacking
-  /\b(?:don't|do\s+not|stop)\s+(?:write|writing|generate|generating|create|creating)\s+(?:a\s+|an\s+|the\s+)?email\b/i,
-  /\binstead\s*,?\s*(?:calculate|compute|answer\s+(?:me|this)|tell\s+me|give\s+me|output|return|show\s+me|respond\s+with)\b/i,
+  // Task hijacking — only unambiguous "do math instead of the email" phrasing.
+  // ("instead, give me / tell me / show me" are normal email content.)
+  /\binstead\s*,?\s*(?:calculate|compute|solve)\b/i,
 
   // Known jailbreak tokens
   /\bjailbreak\b/i,
   /\[INST\]/,
-  /<\|system\|>/,
+  /<\|(?:system|im_start)\|>/,
   /<<SYS>>/,
 ]
 
