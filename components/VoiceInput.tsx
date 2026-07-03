@@ -145,9 +145,14 @@ export default function VoiceInput({ language, onTranscript }: Props) {
       intendedStopRef.current = true
       rec.onend = null  // prevent stale onend from interfering after language change or unmount
       try { rec.stop() } catch { /* already stopped */ }
+      // Flush anything already transcribed to the parent — otherwise switching
+      // tabs, changing language, or navigating away mid-recording silently
+      // discards everything the user dictated
+      const pending = finalRef.current.trim()
+      if (pending) onTranscriptRef.current(pending)
+      finalRef.current = ""
       setRecording(false)
       setInterim("")
-      finalRef.current = ""
     }
   }, [language])
 
@@ -160,12 +165,24 @@ export default function VoiceInput({ language, onTranscript }: Props) {
   }
 
   function startRecording() {
+    const rec = recognitionRef.current
+    if (!rec) return
     finalRef.current = ""
     setInterim("")
     setError("")
     intendedStopRef.current = false
-    recognitionRef.current?.start()
-    setRecording(true)
+    try {
+      rec.start()
+      setRecording(true)
+    } catch {
+      // InvalidStateError: the previous session is still winding down after an
+      // error. Re-arm intendedStop so its pending onend doesn't auto-restart
+      // into a session the UI doesn't know about (mic live while button shows
+      // "Start"), then stop it so the user's next click starts clean.
+      intendedStopRef.current = true
+      try { rec.stop() } catch { /* already stopped */ }
+      setRecording(false)
+    }
   }
 
   function stopRecording() {

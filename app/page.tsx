@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import type { EmailMode, Step, SupportedLanguage } from "@/types"
 import StepUpload from "@/components/StepUpload"
 import StepContext from "@/components/StepContext"
@@ -26,8 +26,32 @@ export default function Home() {
   const [userInput, setUserInput] = useState("")
   const [generatedEmail, setGeneratedEmail] = useState("")
   const [lastModel, setLastModel] = useState("")
+  // Lifted from StepUpload so uploads survive Back navigation (the key={step}
+  // wrapper below remounts every step component on step change)
+  const [uploadFiles, setUploadFiles] = useState<File[]>([])
+  const [uploadPreviews, setUploadPreviews] = useState<string[]>([])
+
+  // OCR and generation keep running after "Start over" — nothing aborts them.
+  // Each reset bumps this counter; guard() wraps the async-completion callbacks
+  // so a stale operation finishing late can't push the user into the wrong
+  // step or attach an abandoned session's context to the new one.
+  const sessionRef = useRef(0)
+  const session = sessionRef.current
+  function guard<A extends unknown[]>(fn: (...args: A) => void) {
+    return (...args: A) => {
+      if (sessionRef.current === session) fn(...args)
+    }
+  }
+
+  function clearUploads() {
+    uploadPreviews.forEach((url) => URL.revokeObjectURL(url))
+    setUploadFiles([])
+    setUploadPreviews([])
+  }
 
   function resetAll() {
+    sessionRef.current++
+    clearUploads()
     setMode(null)
     setStep("upload")
     setEmailContext("")
@@ -38,6 +62,8 @@ export default function Home() {
   }
 
   function selectMode(m: EmailMode) {
+    sessionRef.current++
+    clearUploads()
     setMode(m)
     setStep(m === "compose" ? "input" : "upload")
     setEmailContext("")
@@ -194,18 +220,24 @@ export default function Home() {
           /* Step card */
           <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
             <div className="p-6 sm:p-8 fade-up" key={step}>
-              {step === "upload" && (
+              {mode === "reply" && step === "upload" && (
                 <StepUpload
-                  onAnalyzed={(ctx, terms) => {
+                  files={uploadFiles}
+                  previews={uploadPreviews}
+                  onFilesChange={(files, previews) => {
+                    setUploadFiles(files)
+                    setUploadPreviews(previews)
+                  }}
+                  onAnalyzed={guard((ctx, terms) => {
                     setEmailContext(ctx)
                     setImportantTerms(terms)
                     setStep("context")
-                  }}
+                  })}
                   onBack={() => setMode(null)}
                 />
               )}
 
-              {step === "context" && (
+              {mode === "reply" && step === "context" && (
                 <StepContext
                   emailContext={emailContext}
                   onConfirm={(edited) => {
@@ -225,11 +257,11 @@ export default function Home() {
                   onLanguageChange={setLanguage}
                   userInput={userInput}
                   onUserInputChange={setUserInput}
-                  onGenerate={(email, model) => {
+                  onGenerate={guard((email, model) => {
                     setGeneratedEmail(email)
                     setLastModel(model)
                     setStep("review")
-                  }}
+                  })}
                   onBack={() => mode === "compose" ? setMode(null) : setStep("context")}
                 />
               )}
@@ -240,10 +272,10 @@ export default function Home() {
                   emailContext={emailContext}
                   language={language}
                   initialModel={lastModel}
-                  onRefined={(email, model) => {
+                  onRefined={guard((email, model) => {
                     setGeneratedEmail(email)
                     setLastModel(model)
-                  }}
+                  })}
                   onBack={() => setStep("input")}
                   onStartOver={resetAll}
                 />

@@ -1,11 +1,16 @@
 "use client"
 
-import { useRef, useState, useEffect } from "react"
+import { useRef, useState } from "react"
 import { createWorker } from "tesseract.js"
 import { parseEmailText } from "@/lib/parse-email"
 import type { UploadedImage } from "@/types"
 
 interface Props {
+  // files/previews live in page.tsx so they survive Back navigation
+  // (the key={step} wrapper remounts this component on every step change)
+  files: File[]
+  previews: string[]
+  onFilesChange: (files: File[], previews: string[]) => void
   onAnalyzed: (context: string, importantTerms: string[]) => void
   onBack: () => void
 }
@@ -99,43 +104,41 @@ function compressToJpeg(
   resolve({ data: base64, mediaType: "image/jpeg", ...(name ? { name } : {}) })
 }
 
-export default function StepUpload({ onAnalyzed, onBack }: Props) {
-  const [files, setFiles] = useState<File[]>([])
-  const [previews, setPreviews] = useState<string[]>([])
+export default function StepUpload({ files, previews, onFilesChange, onAnalyzed, onBack }: Props) {
   const [loading, setLoading] = useState(false)
   const [loadingStatus, setLoadingStatus] = useState("")
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [error, setError] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
   const dropRef = useRef<HTMLDivElement>(null)
-  const previewsRef = useRef<string[]>([])
-  previewsRef.current = previews
-
-  useEffect(() => {
-    return () => {
-      previewsRef.current.forEach((url) => URL.revokeObjectURL(url))
-    }
-  }, [])
 
   function addFiles(incoming: FileList | null) {
     if (!incoming) return
     setError("")
-    const valid = Array.from(incoming).filter((f) =>
+    const all = Array.from(incoming)
+    const valid = all.filter((f) =>
       ["image/png", "image/jpeg", "image/webp"].includes(f.type)
     )
+    // Drag-and-drop bypasses the file input's accept filter — tell the user
+    // instead of silently doing nothing (e.g. iPhone HEIC screenshots)
+    if (valid.length < all.length) {
+      setError("Some files were skipped — only PNG, JPEG, or WebP images are supported.")
+    }
+    if (valid.length === 0) return
     if (files.length + valid.length > MAX_IMAGES) {
       setError(`Maximum ${MAX_IMAGES} screenshots allowed.`)
       return
     }
     const newPreviews = valid.map((f) => URL.createObjectURL(f))
-    setFiles((prev) => [...prev, ...valid])
-    setPreviews((prev) => [...prev, ...newPreviews])
+    onFilesChange([...files, ...valid], [...previews, ...newPreviews])
   }
 
   function removeFile(i: number) {
     URL.revokeObjectURL(previews[i])
-    setFiles((prev) => prev.filter((_, idx) => idx !== i))
-    setPreviews((prev) => prev.filter((_, idx) => idx !== i))
+    onFilesChange(
+      files.filter((_, idx) => idx !== i),
+      previews.filter((_, idx) => idx !== i)
+    )
     setError("")
   }
 
