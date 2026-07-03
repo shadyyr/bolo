@@ -3,165 +3,204 @@
 import { useEffect, useRef, useState } from "react"
 import type { SupportedLanguage } from "@/types"
 
-// Minimal types for the Web Speech API (not in standard TypeScript DOM lib)
-interface SpeechRecognitionResult {
-  readonly isFinal: boolean
-  readonly length: number
-  [index: number]: { readonly transcript: string }
-}
-
-interface SpeechRecognitionResultList {
-  readonly length: number
-  readonly resultIndex: number
-  [index: number]: SpeechRecognitionResult
-}
-
-interface SpeechRecognitionEvent extends Event {
-  readonly resultIndex: number
-  readonly results: SpeechRecognitionResultList
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  readonly error: string
-  readonly message: string
-}
-
-interface SpeechRecognitionInstance extends EventTarget {
-  lang: string
-  continuous: boolean
-  interimResults: boolean
-  start(): void
-  stop(): void
-  onresult: ((e: SpeechRecognitionEvent) => void) | null
-  onerror: ((e: SpeechRecognitionErrorEvent) => void) | null
-  onend: (() => void) | null
-}
-
-interface SpeechRecognitionCtor {
-  new (): SpeechRecognitionInstance
-}
+// Records real audio with MediaRecorder and transcribes it server-side
+// (Gemini, Whisper fallback) via /api/transcribe-audio.
+//
+// This replaced the browser Web Speech API on purpose:
+// - Web Speech locks each session to ONE language, so it only tolerated a few
+//   embedded English words — full English sentences inside native-language
+//   speech got garbled or transliterated. Server-side models handle full
+//   code-switching natively.
+// - Web Speech on iOS Safari needs system Dictation and doesn't support all
+//   of our languages. MediaRecorder works everywhere (iOS 14.3+).
 
 interface Props {
   language: SupportedLanguage
   onTranscript: (text: string) => void
 }
 
-const LANG_CODES: Record<SupportedLanguage, string> = {
-  bn: "bn-BD",
-  es: "es",
-  gu: "gu-IN",
+type RecState = "idle" | "recording" | "transcribing"
+
+const MAX_SECONDS = 180
+
+// Chrome/Firefox record webm/opus; Safari and iOS record mp4 (AAC)
+function pickMimeType(): string {
+  if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported) return ""
+  for (const t of ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"]) {
+    if (MediaRecorder.isTypeSupported(t)) return t
+  }
+  return ""
 }
 
-const ERROR_MESSAGES: Record<string, string> = {
-  "not-allowed": "Microphone access was denied. Please allow microphone access in your browser and try again.",
-  "audio-capture": "No microphone was found. Please connect a microphone and try again.",
-  "network": "A network error occurred. Make sure you are connected to the internet.",
-  // iOS Safari: fires when system Dictation is disabled, in non-Safari iOS
-  // browsers, or when the device's speech service can't handle the selected
-  // language. Nothing the page can do — guide the user to settings or typing.
-  "service-not-allowed":
-    "Voice input was blocked by this device. On iPhone or iPad, turn on Dictation (Settings → General → Keyboard → Enable Dictation) and reload this page. If it still doesn't work, this device's voice service may not support your language yet — please type your message instead.",
-  "language-not-supported":
-    "This device's voice service doesn't support your language yet. Please type your message instead.",
-  "no-speech": "", // silent — just means the user paused; we auto-restart
-  "aborted": "",   // silent — user clicked stop
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve((reader.result as string).split(",")[1] ?? "")
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
+
+function formatTime(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60)
+  const s = totalSeconds % 60
+  return `${m}:${String(s).padStart(2, "0")}`
+}
+
+const MIC_ERROR_MESSAGES: Record<string, string> = {
+  NotAllowedError: "Microphone access was denied. Please allow microphone access in your browser and try again.",
+  NotFoundError: "No microphone was found. Please connect a microphone and try again.",
+  NotReadableError: "The microphone is in use by another app. Please close it and try again.",
 }
 
 export default function VoiceInput({ language, onTranscript }: Props) {
-  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
-  const [unsupported, setUnsupported] = useState(false)
-  const [recording, setRecording] = useState(false)
-  const [interim, setInterim] = useState("")
+  const [state, setState] = useState<RecState>("idle")
+  const [elapsed, setElapsed] = useState(0)
   const [error, setError] = useState("")
-  const finalRef = useRef("")
-  // Ref so onend can always call the latest callback without being a useEffect dep
+  const [unsupported, setUnsupported] = useState(false)
+
+  // Refs so async completion (which may outlive this component) always uses
+  // the latest callback and language, and never loses a finished recording
   const onTranscriptRef = useRef(onTranscript)
   useEffect(() => { onTranscriptRef.current = onTranscript }, [onTranscript])
-  // Ref so onend knows whether the user intentionally stopped vs browser auto-stopped
-  const intendedStopRef = useRef(false)
+  const languageRef = useRef(language)
+  useEffect(() => { languageRef.current = language }, [language])
+
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const startTimeRef = useRef(0)
 
   useEffect(() => {
-    const w = window as unknown as {
-      SpeechRecognition?: SpeechRecognitionCtor
-      webkitSpeechRecognition?: SpeechRecognitionCtor
-    }
-    const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
-
-    if (!SR) {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setUnsupported(true)
+    }
+  }, [])
+
+  // Unmount cleanup: stop the timer and mic. If a recording is in flight,
+  // stopping the recorder triggers onstop → transcription → delivery through
+  // onTranscriptRef, so navigating away never discards what was dictated.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+      const rec = recorderRef.current
+      if (rec && rec.state !== "inactive") {
+        try { rec.stop() } catch { /* already stopped */ }
+      } else {
+        streamRef.current?.getTracks().forEach((t) => t.stop())
+      }
+    }
+  }, [])
+
+  async function startRecording() {
+    setError("")
+    let stream: MediaStream
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    } catch (e) {
+      const name = e instanceof DOMException ? e.name : ""
+      setError(MIC_ERROR_MESSAGES[name] ?? "Could not access the microphone. Please try again.")
       return
     }
 
-    const rec = new SR()
-    rec.lang = LANG_CODES[language]
-    rec.continuous = true
-    rec.interimResults = true
-
-    rec.onresult = (e: SpeechRecognitionEvent) => {
-      let interimText = ""
-      let finalText = finalRef.current
-
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const result = e.results[i]
-        if (result.isFinal) {
-          finalText += result[0].transcript
-        } else {
-          interimText += result[0].transcript
-        }
-      }
-
-      finalRef.current = finalText
-      setInterim(interimText)
+    const mimeType = pickMimeType()
+    let recorder: MediaRecorder
+    try {
+      recorder = new MediaRecorder(stream, {
+        ...(mimeType ? { mimeType } : {}),
+        audioBitsPerSecond: 32000, // plenty for speech; keeps uploads tiny
+      })
+    } catch {
+      recorder = new MediaRecorder(stream) // browser default as last resort
     }
 
-    rec.onerror = (e: SpeechRecognitionErrorEvent) => {
-      const msg = ERROR_MESSAGES[e.error]
-      if (msg === undefined) {
-        // Unknown error — show the raw code so the user can report it
-        setError(`Microphone error: ${e.error}. Please try again.`)
-      } else if (msg !== "") {
-        setError(msg)
-      }
-      // For errors that stop the mic (not just no-speech/aborted), stop recording
-      if (e.error !== "no-speech") {
-        intendedStopRef.current = true
-        setRecording(false)
-        setInterim("")
-      }
+    chunksRef.current = []
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) chunksRef.current.push(e.data)
+    }
+    recorder.onstop = () => { void finishRecording() }
+
+    recorderRef.current = recorder
+    streamRef.current = stream
+    recorder.start(1000) // flush chunks every second (more robust on iOS)
+    startTimeRef.current = Date.now()
+    setElapsed(0)
+    setState("recording")
+
+    timerRef.current = setInterval(() => {
+      const secs = Math.floor((Date.now() - startTimeRef.current) / 1000)
+      setElapsed(secs)
+      if (secs >= MAX_SECONDS) stopRecording()
+    }, 500)
+  }
+
+  function stopRecording() {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+    const rec = recorderRef.current
+    if (!rec || rec.state === "inactive") return
+    try { rec.stop() } catch { /* already stopped */ } // onstop → finishRecording
+  }
+
+  async function finishRecording() {
+    streamRef.current?.getTracks().forEach((t) => t.stop())
+    streamRef.current = null
+    recorderRef.current = null
+
+    const blob = new Blob(chunksRef.current, { type: chunksRef.current[0]?.type || "audio/webm" })
+    chunksRef.current = []
+
+    // A fraction of a second of audio — treat as an accidental tap
+    if (blob.size < 2000) {
+      setState("idle")
+      return
     }
 
-    rec.onend = () => {
-      // Some browsers fire onend after a brief silence even with continuous: true.
-      // If the user hasn't clicked Stop (and no hard error occurred), restart automatically.
-      if (!intendedStopRef.current) {
-        try { rec.start() } catch { /* already started */ }
+    setState("transcribing")
+    try {
+      const base64 = await blobToBase64(blob)
+      if (base64.length > 4_000_000) {
+        setError("That recording was too long to process. Please record a shorter message.")
+        setState("idle")
         return
       }
 
-      setRecording(false)
-      setInterim("")
-      if (finalRef.current.trim()) {
-        onTranscriptRef.current(finalRef.current.trim())
-        finalRef.current = ""
+      const res = await fetch("/api/transcribe-audio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audio: base64,
+          mimeType: (blob.type.split(";")[0] || "audio/webm").trim(),
+          language: languageRef.current,
+        }),
+      })
+      const data: { text?: string; error?: string } = await res.json()
+
+      if (!res.ok || data.error) {
+        setError(data.error ?? "Couldn't transcribe your recording. Please try again.")
+        setState("idle")
+        return
       }
-    }
 
-    recognitionRef.current = rec
+      const text = (data.text ?? "").trim()
+      // No letters or digits in any script = noise, not speech (Whisper can
+      // hallucinate symbols like "🔔" on silence or pure tones)
+      if (!/[\p{L}\p{N}]/u.test(text)) {
+        setError("We couldn't hear any words in that recording — please try again closer to the microphone.")
+        setState("idle")
+        return
+      }
 
-    return () => {
-      intendedStopRef.current = true
-      rec.onend = null  // prevent stale onend from interfering after language change or unmount
-      try { rec.stop() } catch { /* already stopped */ }
-      // Flush anything already transcribed to the parent — otherwise switching
-      // tabs, changing language, or navigating away mid-recording silently
-      // discards everything the user dictated
-      const pending = finalRef.current.trim()
-      if (pending) onTranscriptRef.current(pending)
-      finalRef.current = ""
-      setRecording(false)
-      setInterim("")
+      onTranscriptRef.current(text)
+      setState("idle")
+    } catch {
+      setError("Something went wrong while transcribing. Please try again or type your message instead.")
+      setState("idle")
     }
-  }, [language])
+  }
 
   if (unsupported) {
     return (
@@ -171,48 +210,42 @@ export default function VoiceInput({ language, onTranscript }: Props) {
     )
   }
 
-  function startRecording() {
-    const rec = recognitionRef.current
-    if (!rec) return
-    finalRef.current = ""
-    setInterim("")
-    setError("")
-    intendedStopRef.current = false
-    try {
-      rec.start()
-      setRecording(true)
-    } catch {
-      // InvalidStateError: the previous session is still winding down after an
-      // error. Re-arm intendedStop so its pending onend doesn't auto-restart
-      // into a session the UI doesn't know about (mic live while button shows
-      // "Start"), then stop it so the user's next click starts clean.
-      intendedStopRef.current = true
-      try { rec.stop() } catch { /* already stopped */ }
-      setRecording(false)
-    }
-  }
-
-  function stopRecording() {
-    intendedStopRef.current = true
-    recognitionRef.current?.stop()
-  }
-
   return (
     <div className="space-y-3">
-      <button
-        onClick={recording ? stopRecording : startRecording}
-        className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-colors ${
-          recording
-            ? "bg-red-600 text-white hover:bg-red-700"
-            : "bg-teal-800 text-white hover:bg-teal-700"
-        }`}
-        style={{ fontFamily: "var(--font-dm-sans)" }}
-      >
-        <span
-          className={`w-2 h-2 rounded-full bg-white ${recording ? "mic-pulse" : ""}`}
-        />
-        {recording ? "Stop recording" : "Start recording"}
-      </button>
+      <div className="flex items-center gap-3 flex-wrap">
+        <button
+          onClick={state === "recording" ? stopRecording : startRecording}
+          disabled={state === "transcribing"}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+            state === "recording"
+              ? "bg-red-600 text-white hover:bg-red-700"
+              : "bg-teal-800 text-white hover:bg-teal-700"
+          }`}
+          style={{ fontFamily: "var(--font-dm-sans)" }}
+        >
+          <span className={`w-2 h-2 rounded-full bg-white ${state === "recording" ? "mic-pulse" : ""}`} />
+          {state === "recording" ? "Stop recording" : state === "transcribing" ? "Transcribing…" : "Start recording"}
+        </button>
+
+        {state === "recording" && (
+          <span className="text-sm font-medium text-stone-500 tabular-nums">
+            {formatTime(elapsed)} / {formatTime(MAX_SECONDS)}
+          </span>
+        )}
+      </div>
+
+      {state === "recording" && !error && (
+        <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm text-stone-600">
+          Recording — speak naturally in your language. Mixing in English words or whole
+          English sentences is fine; everything will be captured.
+        </div>
+      )}
+
+      {state === "transcribing" && !error && (
+        <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm text-stone-500 italic">
+          Turning your voice into text…
+        </div>
+      )}
 
       {error && (
         <div className="flex gap-2.5 items-start text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
@@ -223,14 +256,8 @@ export default function VoiceInput({ language, onTranscript }: Props) {
         </div>
       )}
 
-      {(recording || interim) && !error && (
-        <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm text-stone-700 min-h-[56px]">
-          {interim || <span className="text-stone-400 italic">Listening…</span>}
-        </div>
-      )}
-
       <p className="text-xs text-stone-400">
-        Voice recognition runs in your browser and depends on your browser&apos;s speech service.
+        Your recording is transcribed securely and is not stored.
       </p>
     </div>
   )

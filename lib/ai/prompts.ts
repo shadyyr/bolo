@@ -91,6 +91,22 @@ Instructions:
 Return only the email text, nothing else.`
 }
 
+export function buildTranscribePrompt(language: string): string {
+  const languageName = LANGUAGE_NAMES[language] ?? language
+
+  return `You are a transcription engine. Transcribe the attached audio exactly as spoken.
+
+The speaker is a ${languageName} speaker who freely mixes ${languageName} and English — anything from single English words (brand names, order numbers, legal terms) up to entire English sentences and phrases in the middle of ${languageName} speech. This code-switching is intentional:
+- Transcribe ${languageName} speech in its own script.
+- Transcribe English speech in English (Latin script) — never transliterate English into ${languageName} script, and never translate either language into the other.
+- Numbers, order IDs, email addresses, and prices: transcribe them the way they were spoken.
+
+Rules:
+- Output ONLY the transcript text. No labels, no commentary, no timestamps, no speaker markers.
+- Do not add, summarize, or correct anything — transcribe exactly what was said.
+- If the audio contains no intelligible speech, output nothing at all.`
+}
+
 export function buildRefinePrompt(params: RefineEmailParams): string {
   return `You are an expert email editor. The user wants to adjust a generated English email.
 

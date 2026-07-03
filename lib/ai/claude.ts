@@ -97,4 +97,10 @@ export const claudeAdapter: AIAdapter = {
     const prompt = buildRefinePrompt(params)
     return generateText(prompt)
   },
+
+  async transcribeAudio(): Promise<string> {
+    // Claude has no audio input; if this adapter is ever wired into the
+    // default flow, transcription must stay on Gemini/Whisper
+    throw new Error("claude adapter does not support audio transcription")
+  },
 }

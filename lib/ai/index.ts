@@ -34,6 +34,12 @@ export function getAdapter() {
       tryWithFallback(() => gemini.generateEmail(params), () => openai.generateEmail(params), "generateEmail"),
     refineEmail: (params) =>
       tryWithFallback(() => gemini.refineEmail(params), () => openai.refineEmail(params), "refineEmail"),
+    transcribeAudio: (audio, language) =>
+      tryWithFallback(
+        () => gemini.transcribeAudio(audio, language),
+        () => openai.transcribeAudio(audio, language),
+        "transcribeAudio"
+      ),
   }
 
   return { adapter, provider }

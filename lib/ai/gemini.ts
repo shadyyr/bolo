@@ -1,12 +1,20 @@
 import { GoogleGenAI } from "@google/genai"
 import type {
+  AudioClip,
   ExtractedEmailContext,
   GenerateEmailParams,
   RefineEmailParams,
+  SupportedLanguage,
   UploadedImage,
 } from "@/types"
 import type { AIAdapter } from "./types"
-import { buildExtractFromTextPrompt, buildExtractPrompt, buildGeneratePrompt, buildRefinePrompt } from "./prompts"
+import {
+  buildExtractFromTextPrompt,
+  buildExtractPrompt,
+  buildGeneratePrompt,
+  buildRefinePrompt,
+  buildTranscribePrompt,
+} from "./prompts"
 
 function getClient() {
   return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
@@ -89,5 +97,25 @@ export const geminiAdapter: AIAdapter = {
   async refineEmail(params: RefineEmailParams): Promise<string> {
     const prompt = buildRefinePrompt(params)
     return generateText(prompt)
+  },
+
+  async transcribeAudio(audio: AudioClip, language: SupportedLanguage): Promise<string> {
+    // Doesn't reuse generateText: an empty result here means "no speech in
+    // the clip", which is a valid transcript — not a failure that should
+    // trigger the provider fallback
+    const client = getClient()
+    const response = await client.models.generateContent({
+      model: getModel(),
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: audio.mimeType, data: audio.data } },
+            { text: buildTranscribePrompt(language) },
+          ],
+        },
+      ],
+    })
+    return (response.text ?? "").trim()
   },
 }

@@ -8,6 +8,11 @@ export type UploadedImage = {
   name?: string
 }
 
+export type AudioClip = {
+  data: string // base64, no data URI prefix
+  mimeType: string // base type without codec suffix — e.g. "audio/webm", "audio/mp4"
+}
+
 export type Step = "upload" | "context" | "input" | "review"
 
 export type ExtractedEmailContext = {
