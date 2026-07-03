@@ -56,6 +56,13 @@ const ERROR_MESSAGES: Record<string, string> = {
   "not-allowed": "Microphone access was denied. Please allow microphone access in your browser and try again.",
   "audio-capture": "No microphone was found. Please connect a microphone and try again.",
   "network": "A network error occurred. Make sure you are connected to the internet.",
+  // iOS Safari: fires when system Dictation is disabled, in non-Safari iOS
+  // browsers, or when the device's speech service can't handle the selected
+  // language. Nothing the page can do — guide the user to settings or typing.
+  "service-not-allowed":
+    "Voice input was blocked by this device. On iPhone or iPad, turn on Dictation (Settings → General → Keyboard → Enable Dictation) and reload this page. If it still doesn't work, this device's voice service may not support your language yet — please type your message instead.",
+  "language-not-supported":
+    "This device's voice service doesn't support your language yet. Please type your message instead.",
   "no-speech": "", // silent — just means the user paused; we auto-restart
   "aborted": "",   // silent — user clicked stop
 }
