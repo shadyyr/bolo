@@ -1,8 +1,13 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { AlertCircle } from "lucide-react"
 import type { EmailMode, SupportedLanguage } from "@/types"
 import { detectPromptInjection } from "@/lib/detect-injection"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
 import LanguageSelector from "./LanguageSelector"
 import VoiceInput from "./VoiceInput"
 
@@ -147,84 +152,69 @@ export default function StepInput({
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-stone-200">
-          <div className="flex gap-0">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="gap-6">
+          <TabsList variant="line" className="w-full justify-start gap-0 border-b border-stone-200">
             {(["type", "speak"] as Tab[]).map((t) => (
-              <button
+              <TabsTrigger
                 key={t}
-                onClick={() => setTab(t)}
-                className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
-                  tab === t
-                    ? "border-teal-700 text-teal-700"
-                    : "border-transparent text-stone-400 hover:text-stone-600"
-                }`}
-                style={{ fontFamily: "var(--font-dm-sans)" }}
+                value={t}
+                className="flex-none px-5 py-2.5 font-display text-sm font-semibold text-stone-400 after:bottom-0 after:h-0.5 after:bg-teal-700 hover:text-stone-600 data-active:text-teal-700"
               >
                 {t === "type" ? "Type" : "Speak"}
-              </button>
+              </TabsTrigger>
             ))}
-          </div>
-        </div>
+          </TabsList>
 
-        {tab === "type" ? (
-          <div className="relative">
-            <textarea
-              value={userInput}
-              onChange={(e) => onUserInputChange(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              rows={6}
-              className="w-full border border-stone-200 rounded-xl p-4 text-sm text-stone-800 resize-y focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent bg-stone-50"
-            />
-            {!userInput && !isFocused && (
-              <p
-                className={`absolute top-4 left-4 right-4 text-sm text-stone-400 pointer-events-none select-none transition-opacity duration-300 ${placeholderVisible ? "opacity-100" : "opacity-0"}`}
-              >
-                {allPlaceholders[placeholderIdx]}
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <VoiceInput language={language} onTranscript={handleTranscript} />
-            {userInput && (
-              <div className="space-y-1.5">
-                <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">Transcript (editable)</p>
-                <textarea
-                  value={userInput}
-                  onChange={(e) => onUserInputChange(e.target.value)}
-                  rows={4}
-                  className="w-full border border-stone-200 rounded-xl p-4 text-sm text-stone-800 resize-y focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent bg-stone-50"
-                />
-              </div>
-            )}
-          </div>
-        )}
+          <TabsContent value="type">
+            <div className="relative">
+              <Textarea
+                value={userInput}
+                onChange={(e) => onUserInputChange(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                className="min-h-40"
+              />
+              {!userInput && !isFocused && (
+                <p
+                  className={`absolute top-4 left-4 right-4 text-sm text-stone-400 pointer-events-none select-none transition-opacity duration-300 ${placeholderVisible ? "opacity-100" : "opacity-0"}`}
+                >
+                  {allPlaceholders[placeholderIdx]}
+                </p>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="speak">
+            <div className="space-y-4">
+              <VoiceInput language={language} onTranscript={handleTranscript} />
+              {userInput && (
+                <div className="space-y-1.5">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">Transcript (editable)</p>
+                  <Textarea
+                    value={userInput}
+                    onChange={(e) => onUserInputChange(e.target.value)}
+                    className="min-h-28"
+                  />
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {error && (
-          <div className="flex gap-2.5 items-start text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-            <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
-            </svg>
-            {error}
-          </div>
+          <Alert variant="destructive" className="border-red-200 bg-red-50">
+            <AlertCircle />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         <div className="flex gap-3">
-          <button
-            onClick={onBack}
-            className="px-4 py-2.5 rounded-lg border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition-colors"
-          >
+          <Button variant="outline" onClick={onBack}>
             ← Back
-          </button>
-          <button
-            onClick={handleGenerate}
-            disabled={!userInput.trim() || loading}
-            className="px-5 py-2.5 bg-teal-800 text-white rounded-lg font-semibold text-sm hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            style={{ fontFamily: "var(--font-dm-sans)" }}
-          >
+          </Button>
+          <Button onClick={handleGenerate} disabled={!userInput.trim() || loading}>
             Generate email →
-          </button>
+          </Button>
         </div>
       </div>
     </div>

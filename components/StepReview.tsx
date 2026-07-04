@@ -1,7 +1,12 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { AlertCircle, Sparkles } from "lucide-react"
 import type { SupportedLanguage } from "@/types"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import VoiceInput from "./VoiceInput"
 
 interface Props {
@@ -108,50 +113,41 @@ export default function StepReview({
           </p>
         </div>
 
-        <textarea
+        <Textarea
           ref={emailRef}
           value={currentEmail}
           onChange={(e) => setCurrentEmail(e.target.value)}
-          rows={12}
-          className="w-full border border-stone-200 rounded-xl p-4 text-sm text-stone-800 resize-y focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent bg-stone-50"
+          className="min-h-72"
         />
 
         {/* Model badge */}
         {lastModel && (
-          <div className="flex items-center gap-1.5 text-xs text-teal-700 bg-teal-50 border border-teal-100 rounded-lg px-3 py-2 w-fit">
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
+          <Badge
+            variant="secondary"
+            className="h-auto gap-1.5 rounded-lg border-teal-100 bg-teal-50 px-3 py-2 text-teal-700"
+          >
+            <Sparkles />
             <span className="font-medium">Generated with</span>
             <code className="font-mono font-semibold">{lastModel}</code>
-          </div>
+          </Badge>
         )}
 
         <div className="flex flex-wrap gap-3">
-          <button
+          <Button
             onClick={handleCopy}
-            className={`px-5 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-              copied
-                ? "bg-teal-100 text-teal-800 border border-teal-200"
-                : "bg-teal-800 text-white hover:bg-teal-700"
-            }`}
-            style={{ fontFamily: "var(--font-dm-sans)" }}
+            className={copied ? "border-teal-200 bg-teal-100 text-teal-800 hover:bg-teal-100" : ""}
           >
             {copied ? "✓ Copied!" : "Copy to clipboard"}
-          </button>
-          <button
-            onClick={() => setRefineOpen((o) => !o)}
-            className="px-5 py-2.5 border border-stone-200 text-stone-700 rounded-lg font-semibold text-sm hover:bg-stone-50 transition-colors"
-            style={{ fontFamily: "var(--font-dm-sans)" }}
-          >
+          </Button>
+          <Button variant="outline" onClick={() => setRefineOpen((o) => !o)} className="font-semibold text-stone-700">
             {refineOpen ? "Cancel" : "Refine email"}
-          </button>
+          </Button>
         </div>
 
         {copyError && (
-          <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-            {copyError}
-          </div>
+          <Alert className="border-amber-200 bg-amber-50 text-amber-800">
+            <AlertDescription className="text-amber-800">{copyError}</AlertDescription>
+          </Alert>
         )}
 
         {refineOpen && (
@@ -161,50 +157,46 @@ export default function StepReview({
               <span className="font-normal text-stone-400">(English or your native language)</span>
             </p>
 
-            <textarea
+            <Textarea
               value={refinement}
               onChange={(e) => setRefinement(e.target.value)}
-              rows={3}
               placeholder="e.g. Make it shorter / একটু ছোট করুন"
-              className="w-full border border-stone-200 rounded-xl p-3 text-sm text-stone-800 resize-y focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent bg-white"
+              className="min-h-24 bg-white p-3"
             />
 
             <VoiceInput language={language} onTranscript={handleVoiceRefinement} />
 
             {error && (
-              <div className="flex gap-2.5 items-start text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-                <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
-                </svg>
-                {error}
-              </div>
+              <Alert variant="destructive" className="border-red-200 bg-red-50">
+                <AlertCircle />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
 
-            <button
-              onClick={handleRefine}
-              disabled={!refinement.trim() || loading}
-              className="px-5 py-2.5 bg-teal-800 text-white rounded-lg font-semibold text-sm hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              style={{ fontFamily: "var(--font-dm-sans)" }}
-            >
+            <Button onClick={handleRefine} disabled={!refinement.trim() || loading}>
               Apply changes
-            </button>
+            </Button>
           </div>
         )}
 
-        <div className="flex gap-4 pt-2 border-t border-stone-100">
-          <button
+        <div className="flex items-center gap-4 pt-2 border-t border-stone-100">
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onBack}
-            className="text-sm text-stone-400 hover:text-stone-600 transition-colors"
+            className="h-auto p-0 text-sm font-normal text-stone-400 hover:bg-transparent hover:text-stone-600"
           >
             ← Back to input
-          </button>
+          </Button>
           <span className="text-stone-200">|</span>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onStartOver}
-            className="text-sm text-stone-400 hover:text-stone-600 transition-colors"
+            className="h-auto p-0 text-sm font-normal text-stone-400 hover:bg-transparent hover:text-stone-600"
           >
             Start over
-          </button>
+          </Button>
         </div>
       </div>
     </div>

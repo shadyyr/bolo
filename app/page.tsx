@@ -6,6 +6,8 @@ import StepUpload from "@/components/StepUpload"
 import StepContext from "@/components/StepContext"
 import StepInput from "@/components/StepInput"
 import StepReview from "@/components/StepReview"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 
 const REPLY_STEPS: Step[] = ["upload", "context", "input", "review"]
 const COMPOSE_STEPS: Step[] = ["input", "review"]
@@ -95,12 +97,14 @@ export default function Home() {
             </div>
           </div>
           {mode !== null && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={resetAll}
-              className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
+              className="text-xs font-medium text-stone-400 hover:text-stone-600"
             >
               Start over
-            </button>
+            </Button>
           )}
         </div>
       </header>
@@ -218,8 +222,8 @@ export default function Home() {
           </div>
         ) : (
           /* Step card */
-          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-            <div className="p-6 sm:p-8 fade-up" key={step}>
+          <Card className="gap-0 rounded-2xl py-0 shadow-sm ring-stone-200">
+            <CardContent className="p-6 sm:p-8 fade-up" key={step}>
               {mode === "reply" && step === "upload" && (
                 <StepUpload
                   files={uploadFiles}
@@ -280,8 +284,8 @@ export default function Home() {
                   onStartOver={resetAll}
                 />
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </main>

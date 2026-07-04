@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
 
 interface Props {
   emailContext: string
@@ -111,26 +113,20 @@ export default function StepContext({ emailContext, onConfirm, onBack }: Props) 
         spellCheck={false}
       />
 
-      <div className="rounded-xl bg-teal-50 border border-teal-100 px-4 py-3 text-sm text-teal-800 leading-relaxed">
-        <span className="font-semibold">Don&apos;t worry about stray characters.</span>{" "}
-        Email apps often leave behind button labels, icons, or status bar text that the scanner picks up. The system automatically filters most of it out — as long as the bold body text above looks correct, your reply will be written accurately.
-      </div>
+      <Alert className="rounded-xl border-teal-100 bg-teal-50 text-teal-800">
+        <AlertDescription className="text-sm leading-relaxed text-teal-800">
+          <span className="font-semibold">Don&apos;t worry about stray characters.</span>{" "}
+          Email apps often leave behind button labels, icons, or status bar text that the scanner picks up. The system automatically filters most of it out — as long as the bold body text above looks correct, your reply will be written accurately.
+        </AlertDescription>
+      </Alert>
 
       <div className="flex gap-3">
-        <button
-          onClick={onBack}
-          className="px-4 py-2.5 rounded-lg border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition-colors"
-        >
+        <Button variant="outline" onClick={onBack}>
           ← Back
-        </button>
-        <button
-          onClick={handleConfirm}
-          disabled={!hasContent}
-          className="px-5 py-2.5 bg-teal-800 text-white rounded-lg font-semibold text-sm hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          style={{ fontFamily: "var(--font-dm-sans)" }}
-        >
+        </Button>
+        <Button onClick={handleConfirm} disabled={!hasContent}>
           Looks good →
-        </button>
+        </Button>
       </div>
     </div>
   )

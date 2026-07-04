@@ -1,7 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { AlertCircle } from "lucide-react"
 import type { SupportedLanguage } from "@/types"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
 
 // Records real audio with MediaRecorder and transcribes it server-side
 // (Gemini, Whisper fallback) via /api/transcribe-audio.
@@ -213,19 +216,14 @@ export default function VoiceInput({ language, onTranscript }: Props) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3 flex-wrap">
-        <button
+        <Button
           onClick={state === "recording" ? stopRecording : startRecording}
           disabled={state === "transcribing"}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
-            state === "recording"
-              ? "bg-red-600 text-white hover:bg-red-700"
-              : "bg-teal-800 text-white hover:bg-teal-700"
-          }`}
-          style={{ fontFamily: "var(--font-dm-sans)" }}
+          className={state === "recording" ? "bg-red-600 text-white hover:bg-red-700" : ""}
         >
           <span className={`w-2 h-2 rounded-full bg-white ${state === "recording" ? "mic-pulse" : ""}`} />
           {state === "recording" ? "Stop recording" : state === "transcribing" ? "Transcribing…" : "Start recording"}
-        </button>
+        </Button>
 
         {state === "recording" && (
           <span className="text-sm font-medium text-stone-500 tabular-nums">
@@ -248,12 +246,10 @@ export default function VoiceInput({ language, onTranscript }: Props) {
       )}
 
       {error && (
-        <div className="flex gap-2.5 items-start text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
-          </svg>
-          {error}
-        </div>
+        <Alert variant="destructive" className="border-red-200 bg-red-50">
+          <AlertCircle />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <p className="text-xs text-stone-400">

@@ -2,7 +2,11 @@
 
 import { useRef, useState } from "react"
 import { createWorker } from "tesseract.js"
+import { AlertCircle } from "lucide-react"
 import { parseEmailText } from "@/lib/parse-email"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
 import type { UploadedImage } from "@/types"
 
 interface Props {
@@ -235,12 +239,7 @@ export default function StepUpload({ files, previews, onFilesChange, onAnalyzed,
             <p className="text-sm font-semibold text-stone-700" style={{ fontFamily: "var(--font-dm-sans)" }}>
               {loadingStatus || "Preparing…"}
             </p>
-            <div className="w-48 h-1.5 bg-stone-200 rounded-full overflow-hidden mx-auto">
-              <div
-                className="h-full bg-teal-600 rounded-full transition-all duration-300"
-                style={{ width: `${loadingProgress}%` }}
-              />
-            </div>
+            <Progress value={loadingProgress} className="mx-auto h-1.5 w-48 bg-stone-200" />
           </div>
         </div>
       )}
@@ -304,31 +303,21 @@ export default function StepUpload({ files, previews, onFilesChange, onAnalyzed,
         )}
 
         {error && (
-          <div className="flex gap-2.5 items-start text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-            <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
-            </svg>
-            {error}
-          </div>
+          <Alert variant="destructive" className="border-red-200 bg-red-50">
+            <AlertCircle />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         <p className="text-xs text-stone-400">Screenshots are not stored by this app.</p>
 
         <div className="flex gap-3">
-          <button
-            onClick={onBack}
-            className="px-4 py-2.5 rounded-lg border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition-colors"
-          >
+          <Button variant="outline" onClick={onBack}>
             ← Back
-          </button>
-          <button
-            onClick={handleAnalyze}
-            disabled={files.length === 0 || loading}
-            className="px-5 py-2.5 bg-teal-800 text-white rounded-lg text-sm font-semibold hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            style={{ fontFamily: "var(--font-dm-sans)" }}
-          >
+          </Button>
+          <Button onClick={handleAnalyze} disabled={files.length === 0 || loading}>
             Analyze email →
-          </button>
+          </Button>
         </div>
       </div>
     </div>
