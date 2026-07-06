@@ -100,7 +100,7 @@ export default function StepContext({ emailContext, onConfirm, onBack }: Props) 
           Review extracted email
         </h2>
         <p className="mt-1 text-sm text-stone-500">
-          The <strong>bold text</strong> is the email body — fix any misread words there. You can ignore the gray header lines above it.
+          The <strong>bold text</strong> is the email body. Fix any misread words there, and ignore the gray header lines above it.
         </p>
       </div>
 
@@ -116,7 +116,7 @@ export default function StepContext({ emailContext, onConfirm, onBack }: Props) 
       <Alert className="rounded-xl border-teal-100 bg-teal-50 text-teal-800">
         <AlertDescription className="text-sm leading-relaxed text-teal-800">
           <span className="font-semibold">Don&apos;t worry about stray characters.</span>{" "}
-          Email apps often leave behind button labels, icons, or status bar text that the scanner picks up. The system automatically filters most of it out — as long as the bold body text above looks correct, your reply will be written accurately.
+          Email apps often leave behind button labels, icons, or status bar text that the scanner picks up. Bolo filters most of it out. As long as the bold body text above looks correct, your reply will be written accurately.
         </AlertDescription>
       </Alert>
 
@@ -125,7 +125,7 @@ export default function StepContext({ emailContext, onConfirm, onBack }: Props) 
           ← Back
         </Button>
         <Button onClick={handleConfirm} disabled={!hasContent}>
-          Looks good →
+          Use this text
         </Button>
       </div>
     </div>

@@ -51,6 +51,19 @@
   --radius-4xl: 2rem;
 }
 
+/* House teal: Bolo's own ramp, slightly greener and deeper than Tailwind's
+   stock teal. Every teal-* utility in the app resolves to these. The 800
+   step matches the logo mark. */
+@theme {
+  --color-teal-50: #effaf6;
+  --color-teal-100: #d9f2ea;
+  --color-teal-200: #b4e6d8;
+  --color-teal-500: #17997f;
+  --color-teal-600: #0d8271;
+  --color-teal-700: #0c6b5f;
+  --color-teal-800: #0e5a51;
+}
+
 /* Loading spinner */
 @keyframes spin-ring {
   to { transform: rotate(360deg); }
@@ -60,7 +73,7 @@
   width: 36px;
   height: 36px;
   border: 3px solid #d6d3d1;
-  border-top-color: #0f766e;
+  border-top-color: #0c6b5f;
   border-radius: 50%;
   animation: spin-ring 0.75s linear infinite;
 }
@@ -93,7 +106,7 @@
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .spinner { animation: none; border-top-color: #0f766e; }
+  .spinner { animation: none; border-top-color: #0c6b5f; }
   .fade-up { animation: none; }
   .mic-pulse { animation: none; }
 }
@@ -107,7 +120,7 @@
   --card-foreground: #1c1917;
   --popover: #ffffff;
   --popover-foreground: #1c1917;
-  --primary: #115e59;
+  --primary: #0e5a51;
   --primary-foreground: #ffffff;
   --secondary: #f5f5f4;
   --secondary-foreground: #44403c;
@@ -118,7 +131,7 @@
   --destructive: #dc2626;
   --border: #e7e5e4;
   --input: #e7e5e4;
-  --ring: #0d9488;
+  --ring: #0d8271;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);

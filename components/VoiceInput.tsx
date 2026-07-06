@@ -192,7 +192,7 @@ export default function VoiceInput({ language, onTranscript }: Props) {
       // No letters or digits in any script = noise, not speech (Whisper can
       // hallucinate symbols like "🔔" on silence or pure tones)
       if (!/[\p{L}\p{N}]/u.test(text)) {
-        setError("We couldn't hear any words in that recording — please try again closer to the microphone.")
+        setError("We couldn't hear any words in that recording. Try again closer to the microphone.")
         setState("idle")
         return
       }
@@ -234,8 +234,8 @@ export default function VoiceInput({ language, onTranscript }: Props) {
 
       {state === "recording" && !error && (
         <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm text-stone-600">
-          Recording — speak naturally in your language. Mixing in English words or whole
-          English sentences is fine; everything will be captured.
+          Speak naturally in your language. English words or whole English sentences
+          are fine, and everything will be captured.
         </div>
       )}
 
@@ -253,7 +253,7 @@ export default function VoiceInput({ language, onTranscript }: Props) {
       )}
 
       <p className="text-xs text-stone-400">
-        Your recording is transcribed securely and is not stored.
+        Bolo uses your recording only to write the transcript, then discards it.
       </p>
     </div>
   )

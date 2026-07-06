@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { AlertCircle, Sparkles } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 import type { SupportedLanguage } from "@/types"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -126,8 +126,7 @@ export default function StepReview({
             variant="secondary"
             className="h-auto gap-1.5 rounded-lg border-teal-100 bg-teal-50 px-3 py-2 text-teal-700"
           >
-            <Sparkles />
-            <span className="font-medium">Generated with</span>
+            <span className="font-medium">Written by</span>
             <code className="font-mono font-semibold">{lastModel}</code>
           </Badge>
         )}

@@ -141,13 +141,13 @@ export default function StepInput({
           </h2>
           <p className="mt-1 text-sm text-stone-500">
             {isReply
-              ? "Tell us what you want to say in your language — we'll write the professional English email."
-              : "Describe who you're writing to and what you want to say — we'll write it in professional English."}
+              ? "Tell us what you want to say in your language. We'll write the professional English email."
+              : "Describe who you're writing to and what you want to say. We'll write it in professional English."}
           </p>
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">Your language</p>
+          <p className="text-xs font-semibold text-stone-500">Your language</p>
           <LanguageSelector value={language} onChange={onLanguageChange} />
         </div>
 
@@ -189,7 +189,7 @@ export default function StepInput({
               <VoiceInput language={language} onTranscript={handleTranscript} />
               {userInput && (
                 <div className="space-y-1.5">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">Transcript (editable)</p>
+                  <p className="text-xs font-semibold text-stone-500">Transcript (you can edit it)</p>
                   <Textarea
                     value={userInput}
                     onChange={(e) => onUserInputChange(e.target.value)}
@@ -213,7 +213,7 @@ export default function StepInput({
             ← Back
           </Button>
           <Button onClick={handleGenerate} disabled={!userInput.trim() || loading}>
-            Generate email →
+            Write my email
           </Button>
         </div>
       </div>

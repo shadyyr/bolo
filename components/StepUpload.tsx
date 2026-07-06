@@ -270,7 +270,7 @@ export default function StepUpload({ files, previews, onFilesChange, onAnalyzed,
             Drag &amp; drop screenshots here, or{" "}
             <span className="text-teal-700 font-semibold">browse files</span>
           </p>
-          <p className="text-xs text-stone-400 mt-1">PNG, JPEG, or WebP — up to 3 files</p>
+          <p className="text-xs text-stone-400 mt-1">PNG, JPEG, or WebP, up to 3 files</p>
           <input
             ref={inputRef}
             type="file"
@@ -316,7 +316,7 @@ export default function StepUpload({ files, previews, onFilesChange, onAnalyzed,
             ← Back
           </Button>
           <Button onClick={handleAnalyze} disabled={files.length === 0 || loading}>
-            Analyze email →
+            Read the email
           </Button>
         </div>
       </div>

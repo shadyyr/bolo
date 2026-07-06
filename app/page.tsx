@@ -6,6 +6,7 @@ import StepUpload from "@/components/StepUpload"
 import StepContext from "@/components/StepContext"
 import StepInput from "@/components/StepInput"
 import StepReview from "@/components/StepReview"
+import Logo from "@/components/Logo"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -83,19 +84,7 @@ export default function Home() {
       {/* Header */}
       <header className="border-b border-stone-200 bg-white">
         <div className="max-w-2xl mx-auto px-5 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-teal-800 flex items-center justify-center">
-              <span className="text-white text-sm font-bold" style={{ fontFamily: "var(--font-dm-sans)" }}>B</span>
-            </div>
-            <div>
-              <span className="text-lg font-bold text-stone-900" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                Bolo
-              </span>
-              <span className="ml-2 text-xs text-stone-400 font-medium tracking-wide uppercase">
-                Email Assistant
-              </span>
-            </div>
-          </div>
+          <Logo />
           {mode !== null && (
             <Button
               variant="ghost"
@@ -172,7 +161,7 @@ export default function Home() {
                 Write professional emails in English
               </h1>
               <p className="text-stone-500 text-sm">
-                Tell us what you want to say in your language — we&apos;ll write it for you.
+                Tell us what you want to say in your language. We&apos;ll write it for you.
               </p>
             </div>
 
@@ -194,7 +183,7 @@ export default function Home() {
                   Upload a screenshot of the email you received, then tell us what you want to say.
                 </p>
                 <span className="mt-4 inline-flex items-center text-sm font-semibold text-teal-700">
-                  Get started →
+                  Start a reply
                 </span>
               </button>
 
@@ -215,7 +204,7 @@ export default function Home() {
                   No screenshots needed. Just describe who you&apos;re writing to and what you want to say.
                 </p>
                 <span className="mt-4 inline-flex items-center text-sm font-semibold text-teal-700">
-                  Get started →
+                  Start from scratch
                 </span>
               </button>
             </div>
