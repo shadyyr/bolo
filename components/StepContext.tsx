@@ -96,10 +96,10 @@ export default function StepContext({ emailContext, onConfirm, onBack }: Props) 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-xl font-bold text-stone-900" style={{ fontFamily: "var(--font-dm-sans)" }}>
-          Review extracted email
+        <h2 className="text-xl font-bold text-stone-900">
+          Check the email text
         </h2>
-        <p className="mt-1 text-sm text-stone-500">
+        <p className="mt-1 text-sm leading-relaxed text-stone-500">
           The <strong>bold text</strong> is the email body. Fix any misread words there, and ignore the gray header lines above it.
         </p>
       </div>
@@ -109,7 +109,7 @@ export default function StepContext({ emailContext, onConfirm, onBack }: Props) 
         contentEditable
         suppressContentEditableWarning
         onInput={() => setHasContent(!!editorRef.current?.innerText?.trim())}
-        className="w-full border border-stone-200 rounded-xl p-4 text-sm text-stone-800 font-mono bg-stone-50 min-h-[18rem] focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent leading-relaxed overflow-y-auto"
+        className="w-full border border-stone-200 rounded-xl p-4 text-sm text-stone-800 bg-stone-50 min-h-[18rem] focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent leading-relaxed overflow-y-auto"
         spellCheck={false}
       />
 

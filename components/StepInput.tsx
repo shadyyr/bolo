@@ -103,7 +103,7 @@ export default function StepInput({
       const data: { email?: string; model?: string; error?: string } = await res.json()
 
       if (!res.ok || data.error) {
-        setError(data.error ?? "Failed to generate email. Please try again.")
+        setError(data.error ?? "We couldn't write your email. Please try again.")
         return
       }
 
@@ -122,7 +122,7 @@ export default function StepInput({
         <div className="absolute inset-0 -m-6 sm:-m-8 bg-white/90 backdrop-blur-sm rounded-2xl z-10 flex flex-col items-center justify-center gap-4">
           <div className="spinner" />
           <div className="text-center">
-            <p className="text-sm font-semibold text-stone-700" style={{ fontFamily: "var(--font-dm-sans)" }}>
+            <p className="text-sm font-semibold text-stone-700">
               Writing your email
             </p>
             <p className="text-xs text-stone-400 mt-0.5">
@@ -136,10 +136,10 @@ export default function StepInput({
 
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-bold text-stone-900" style={{ fontFamily: "var(--font-dm-sans)" }}>
+          <h2 className="text-xl font-bold text-stone-900">
             {isReply ? "Write your reply" : "Write your email"}
           </h2>
-          <p className="mt-1 text-sm text-stone-500">
+          <p className="mt-1 text-sm leading-relaxed text-stone-500">
             {isReply
               ? "Tell us what you want to say in your language. We'll write the professional English email."
               : "Describe who you're writing to and what you want to say. We'll write it in professional English."}
@@ -158,7 +158,7 @@ export default function StepInput({
               <TabsTrigger
                 key={t}
                 value={t}
-                className="flex-none px-5 py-2.5 font-display text-sm font-semibold text-stone-400 after:bottom-0 after:h-0.5 after:bg-teal-700 hover:text-stone-600 data-active:text-teal-700"
+                className="flex-none px-5 py-2.5 text-sm font-semibold text-stone-400 after:bottom-0 after:h-0.5 after:bg-teal-700 hover:text-stone-600 data-active:text-teal-700"
               >
                 {t === "type" ? "Type" : "Speak"}
               </TabsTrigger>
@@ -189,7 +189,7 @@ export default function StepInput({
               <VoiceInput language={language} onTranscript={handleTranscript} />
               {userInput && (
                 <div className="space-y-1.5">
-                  <p className="text-xs font-semibold text-stone-500">Transcript (you can edit it)</p>
+                  <p className="text-xs font-semibold text-stone-500">What you said (you can edit it)</p>
                   <Textarea
                     value={userInput}
                     onChange={(e) => onUserInputChange(e.target.value)}

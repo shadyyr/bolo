@@ -184,10 +184,10 @@ export default function StepUpload({ files, previews, onFilesChange, onAnalyzed,
       const worker = await createWorker("eng", 1, {
         logger: (m: { status: string; progress: number }) => {
           if (m.status === "loading tesseract core") {
-            setLoadingStatus("Loading OCR engine…")
+            setLoadingStatus("Getting set up…")
             setLoadingProgress(Math.round(m.progress * 40))
           } else if (m.status === "loading language traineddata") {
-            setLoadingStatus("Loading language data…")
+            setLoadingStatus("Almost ready…")
             setLoadingProgress(40 + Math.round(m.progress * 30))
           } else if (m.status === "recognizing text") {
             setLoadingStatus(
@@ -236,7 +236,7 @@ export default function StepUpload({ files, previews, onFilesChange, onAnalyzed,
         <div className="absolute inset-0 -m-6 sm:-m-8 bg-white/90 backdrop-blur-sm rounded-2xl z-10 flex flex-col items-center justify-center gap-4">
           <div className="spinner" />
           <div className="text-center space-y-3">
-            <p className="text-sm font-semibold text-stone-700" style={{ fontFamily: "var(--font-dm-sans)" }}>
+            <p className="text-sm font-semibold text-stone-700">
               {loadingStatus || "Preparing…"}
             </p>
             <Progress value={loadingProgress} className="mx-auto h-1.5 w-48 bg-stone-200" />
@@ -246,10 +246,10 @@ export default function StepUpload({ files, previews, onFilesChange, onAnalyzed,
 
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-bold text-stone-900" style={{ fontFamily: "var(--font-dm-sans)" }}>
+          <h2 className="text-xl font-bold text-stone-900">
             Upload email screenshots
           </h2>
-          <p className="mt-1 text-sm text-stone-500">
+          <p className="mt-1 text-sm leading-relaxed text-stone-500">
             Upload up to 3 screenshots of the email you want to reply to.
           </p>
         </div>
@@ -309,7 +309,7 @@ export default function StepUpload({ files, previews, onFilesChange, onAnalyzed,
           </Alert>
         )}
 
-        <p className="text-xs text-stone-400">Screenshots are not stored by this app.</p>
+        <p className="text-xs leading-relaxed text-stone-400">Bolo doesn&apos;t keep your screenshots.</p>
 
         <div className="flex gap-3">
           <Button variant="outline" onClick={onBack}>

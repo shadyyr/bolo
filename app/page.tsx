@@ -129,7 +129,7 @@ export default function Home() {
                             ? "text-teal-700"
                             : "text-stone-400"
                       }`}
-                      style={{ fontFamily: "var(--font-dm-sans)" }}
+                     
                     >
                       {STEP_LABELS[s]}
                     </span>
@@ -157,10 +157,10 @@ export default function Home() {
           /* Mode selector landing */
           <div className="space-y-8">
             <div className="text-center space-y-2">
-              <h1 className="text-2xl font-bold text-stone-900" style={{ fontFamily: "var(--font-dm-sans)" }}>
+              <h1 className="text-2xl font-bold text-stone-900 text-balance">
                 Write professional emails in English
               </h1>
-              <p className="text-stone-500 text-sm">
+              <p className="text-stone-500 text-base leading-relaxed">
                 Tell us what you want to say in your language. We&apos;ll write it for you.
               </p>
             </div>
@@ -176,7 +176,7 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                   </svg>
                 </div>
-                <h2 className="font-bold text-stone-900 text-base mb-1.5" style={{ fontFamily: "var(--font-dm-sans)" }}>
+                <h2 className="font-bold text-stone-900 text-base mb-1.5">
                   Reply to an email
                 </h2>
                 <p className="text-sm text-stone-500 leading-relaxed">
@@ -197,7 +197,7 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </div>
-                <h2 className="font-bold text-stone-900 text-base mb-1.5" style={{ fontFamily: "var(--font-dm-sans)" }}>
+                <h2 className="font-bold text-stone-900 text-base mb-1.5">
                   Write a new email
                 </h2>
                 <p className="text-sm text-stone-500 leading-relaxed">

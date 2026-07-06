@@ -183,7 +183,7 @@ export default function VoiceInput({ language, onTranscript }: Props) {
       const data: { text?: string; error?: string } = await res.json()
 
       if (!res.ok || data.error) {
-        setError(data.error ?? "Couldn't transcribe your recording. Please try again.")
+        setError(data.error ?? "We couldn't turn that recording into text. Please try again.")
         setState("idle")
         return
       }
@@ -200,7 +200,7 @@ export default function VoiceInput({ language, onTranscript }: Props) {
       onTranscriptRef.current(text)
       setState("idle")
     } catch {
-      setError("Something went wrong while transcribing. Please try again or type your message instead.")
+      setError("Something went wrong while turning your voice into text. Please try again or type your message instead.")
       setState("idle")
     }
   }
@@ -222,7 +222,7 @@ export default function VoiceInput({ language, onTranscript }: Props) {
           className={state === "recording" ? "bg-red-600 text-white hover:bg-red-700" : ""}
         >
           <span className={`w-2 h-2 rounded-full bg-white ${state === "recording" ? "mic-pulse" : ""}`} />
-          {state === "recording" ? "Stop recording" : state === "transcribing" ? "Transcribing…" : "Start recording"}
+          {state === "recording" ? "Stop recording" : state === "transcribing" ? "Please wait…" : "Start recording"}
         </Button>
 
         {state === "recording" && (
@@ -233,14 +233,14 @@ export default function VoiceInput({ language, onTranscript }: Props) {
       </div>
 
       {state === "recording" && !error && (
-        <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm text-stone-600">
+        <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm leading-relaxed text-stone-600">
           Speak naturally in your language. English words or whole English sentences
-          are fine, and everything will be captured.
+          are fine. We&apos;ll write down all of it.
         </div>
       )}
 
       {state === "transcribing" && !error && (
-        <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm text-stone-500 italic">
+        <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm leading-relaxed text-stone-500 italic">
           Turning your voice into text…
         </div>
       )}
@@ -252,8 +252,8 @@ export default function VoiceInput({ language, onTranscript }: Props) {
         </Alert>
       )}
 
-      <p className="text-xs text-stone-400">
-        Bolo uses your recording only to write the transcript, then discards it.
+      <p className="text-xs leading-relaxed text-stone-400">
+        Bolo uses your recording only to write down your words, then deletes it.
       </p>
     </div>
   )

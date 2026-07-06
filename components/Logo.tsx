@@ -33,7 +33,7 @@ export default function Logo() {
       <BoloMark />
       <span
         className="text-lg font-bold text-stone-900"
-        style={{ fontFamily: "var(--font-dm-sans)" }}
+       
       >
         Bolo
       </span>

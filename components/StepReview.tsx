@@ -57,7 +57,7 @@ export default function StepReview({
       const data: { email?: string; model?: string; error?: string } = await res.json()
 
       if (!res.ok || data.error) {
-        setError(data.error ?? "Failed to refine email. Please try again.")
+        setError(data.error ?? "We couldn't update your email. Please try again.")
         return
       }
 
@@ -95,21 +95,21 @@ export default function StepReview({
         <div className="absolute inset-0 -m-6 sm:-m-8 bg-white/90 backdrop-blur-sm rounded-2xl z-10 flex flex-col items-center justify-center gap-4">
           <div className="spinner" />
           <div className="text-center">
-            <p className="text-sm font-semibold text-stone-700" style={{ fontFamily: "var(--font-dm-sans)" }}>
-              Refining your email
+            <p className="text-sm font-semibold text-stone-700">
+              Updating your email
             </p>
-            <p className="text-xs text-stone-400 mt-0.5">Applying your changes…</p>
+            <p className="text-xs text-stone-400 mt-0.5">Making your changes…</p>
           </div>
         </div>
       )}
 
-      <div className="space-y-5">
+      <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-bold text-stone-900" style={{ fontFamily: "var(--font-dm-sans)" }}>
+          <h2 className="text-xl font-bold text-stone-900">
             Your email
           </h2>
-          <p className="mt-1 text-sm text-stone-500">
-            Edit inline, copy, or ask for changes before sending.
+          <p className="mt-1 text-sm leading-relaxed text-stone-500">
+            Edit it right here, copy it, or ask us to change it.
           </p>
         </div>
 
@@ -127,7 +127,7 @@ export default function StepReview({
             className="h-auto gap-1.5 rounded-lg border-teal-100 bg-teal-50 px-3 py-2 text-teal-700"
           >
             <span className="font-medium">Written by</span>
-            <code className="font-mono font-semibold">{lastModel}</code>
+            <span className="font-semibold">{lastModel}</span>
           </Badge>
         )}
 
@@ -139,7 +139,7 @@ export default function StepReview({
             {copied ? "✓ Copied!" : "Copy to clipboard"}
           </Button>
           <Button variant="outline" onClick={() => setRefineOpen((o) => !o)} className="font-semibold text-stone-700">
-            {refineOpen ? "Cancel" : "Refine email"}
+            {refineOpen ? "Cancel" : "Ask for changes"}
           </Button>
         </div>
 
@@ -151,7 +151,7 @@ export default function StepReview({
 
         {refineOpen && (
           <div className="border border-stone-200 rounded-xl p-5 space-y-4 bg-stone-50">
-            <p className="text-sm font-semibold text-stone-700" style={{ fontFamily: "var(--font-dm-sans)" }}>
+            <p className="text-sm font-semibold text-stone-700">
               What would you like to change?{" "}
               <span className="font-normal text-stone-400">(English or your native language)</span>
             </p>
@@ -185,7 +185,7 @@ export default function StepReview({
             onClick={onBack}
             className="h-auto p-0 text-sm font-normal text-stone-400 hover:bg-transparent hover:text-stone-600"
           >
-            ← Back to input
+            ← Back
           </Button>
           <span className="text-stone-200">|</span>
           <Button
