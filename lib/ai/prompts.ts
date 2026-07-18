@@ -66,6 +66,7 @@ Instructions:
 5. Do NOT invent names, prices, dates, order numbers, deadlines, attachments, or promises not present in the email thread or user input. If a detail is unclear, phrase it generally instead of guessing.
 6. If the user's input is incomplete, write the best professional version using only the available information. Do not ask follow-up questions unless the email truly cannot be written safely without clarification.
 7. Plain text only — this goes straight into an email client with no Markdown rendering. Never use **, __, #, or backticks for emphasis or headings, even around prices, percentages, or dates.
+8. Never use an em dash (—) in text you write yourself. Use a comma, period, semicolon, or parentheses instead. The only exception is quoting text verbatim that itself contains an em dash (for example, a phrase from the original email thread).
 
 Return only the email text, nothing else.`
 }
@@ -89,6 +90,7 @@ Instructions:
 6. Do NOT invent specific names, prices, dates, or numbers not mentioned by the user. If a detail is missing, write around it professionally.
 7. If the user's description is incomplete, write the best professional version using only what was provided.
 8. Plain text only — this goes straight into an email client with no Markdown rendering. Never use **, __, #, or backticks for emphasis or headings, even around prices, percentages, or dates.
+9. Never use an em dash (—) in text you write yourself. Use a comma, period, semicolon, or parentheses instead. The only exception is quoting text verbatim that itself contains an em dash.
 
 Return only the email text, nothing else.`
 }
@@ -130,5 +132,6 @@ Instructions:
 3. Do NOT invent new facts, names, prices, or promises not in the original thread or draft
 4. Preserve the professional tone and format unless the user asks to change it
 5. Plain text only — this goes straight into an email client with no Markdown rendering. Never use **, __, #, or backticks for emphasis or headings, even around prices, percentages, or dates.
-6. Return the complete updated email text only — no explanation, no commentary`
+6. Never use an em dash (—) in text you write yourself. Use a comma, period, semicolon, or parentheses instead. The only exception is quoting text verbatim that itself contains an em dash (for example, a phrase from the original email thread or the current draft).
+7. Return the complete updated email text only — no explanation, no commentary`
 }
