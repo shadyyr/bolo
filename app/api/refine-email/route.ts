@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAdapter } from "@/lib/ai"
 import { detectPromptInjection } from "@/lib/detect-injection"
-import { invalidStringField } from "@/lib/validate"
+import { stripMarkdown } from "@/lib/sanitize-email"
+import { invalidRequestBody, invalidStringField } from "@/lib/validate"
 import type { RefineEmailParams } from "@/types"
 
 export const runtime = "nodejs"
@@ -12,6 +13,11 @@ export async function POST(req: NextRequest) {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+  }
+
+  const bodyError = invalidRequestBody(body)
+  if (bodyError) {
+    return NextResponse.json({ error: bodyError }, { status: 400 })
   }
 
   const { currentEmail, refinement, emailContext } = body
@@ -36,7 +42,7 @@ export async function POST(req: NextRequest) {
       refinement: refinement as string,
       emailContext: emailContext ?? "",
     })
-    return NextResponse.json({ email, model: provider.name })
+    return NextResponse.json({ email: stripMarkdown(email), model: provider.name })
   } catch (err) {
     console.error("[refine-email]", err)
     return NextResponse.json({ error: "Failed to refine email" }, { status: 500 })

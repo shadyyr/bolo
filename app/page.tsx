@@ -249,7 +249,7 @@ export default function Home() {
                   language={language}
                   onLanguageChange={setLanguage}
                   userInput={userInput}
-                  onUserInputChange={setUserInput}
+                  onUserInputChange={guard(setUserInput)}
                   onGenerate={guard((email, model) => {
                     setGeneratedEmail(email)
                     setLastModel(model)

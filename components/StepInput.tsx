@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import type { Dispatch, SetStateAction } from "react"
 import { AlertCircle } from "lucide-react"
 import type { EmailMode, SupportedLanguage } from "@/types"
 import { detectPromptInjection } from "@/lib/detect-injection"
@@ -18,7 +19,7 @@ interface Props {
   language: SupportedLanguage
   onLanguageChange: (lang: SupportedLanguage) => void
   userInput: string
-  onUserInputChange: (input: string) => void
+  onUserInputChange: Dispatch<SetStateAction<string>>
   onGenerate: (email: string, model: string) => void
   onBack: () => void
 }
@@ -78,7 +79,7 @@ export default function StepInput({
   const isReply = mode === "reply"
 
   function handleTranscript(text: string) {
-    onUserInputChange(userInput ? userInput + " " + text : text)
+    onUserInputChange((prev) => (prev ? prev + " " + text : text))
   }
 
   async function handleGenerate() {

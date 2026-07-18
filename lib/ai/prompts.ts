@@ -65,6 +65,7 @@ Instructions:
 4. Match the formality level of the original email thread
 5. Do NOT invent names, prices, dates, order numbers, deadlines, attachments, or promises not present in the email thread or user input. If a detail is unclear, phrase it generally instead of guessing.
 6. If the user's input is incomplete, write the best professional version using only the available information. Do not ask follow-up questions unless the email truly cannot be written safely without clarification.
+7. Plain text only — this goes straight into an email client with no Markdown rendering. Never use **, __, #, or backticks for emphasis or headings, even around prices, percentages, or dates.
 
 Return only the email text, nothing else.`
 }
@@ -87,6 +88,7 @@ Instructions:
 5. If the user has not specified a recipient name, use a generic greeting (e.g., "Dear Sir or Madam," or "To Whom It May Concern,")
 6. Do NOT invent specific names, prices, dates, or numbers not mentioned by the user. If a detail is missing, write around it professionally.
 7. If the user's description is incomplete, write the best professional version using only what was provided.
+8. Plain text only — this goes straight into an email client with no Markdown rendering. Never use **, __, #, or backticks for emphasis or headings, even around prices, percentages, or dates.
 
 Return only the email text, nothing else.`
 }
@@ -127,5 +129,6 @@ Instructions:
 2. Apply the requested changes to the email draft
 3. Do NOT invent new facts, names, prices, or promises not in the original thread or draft
 4. Preserve the professional tone and format unless the user asks to change it
-5. Return the complete updated email text only — no explanation, no commentary`
+5. Plain text only — this goes straight into an email client with no Markdown rendering. Never use **, __, #, or backticks for emphasis or headings, even around prices, percentages, or dates.
+6. Return the complete updated email text only — no explanation, no commentary`
 }

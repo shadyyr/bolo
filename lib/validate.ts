@@ -7,6 +7,20 @@ interface StringFieldOpts {
   maxLength: number
 }
 
+/**
+ * Returns an error message if the parsed request body isn't a plain object
+ * (e.g. `null`, an array, or a bare primitive), or null if it's fine to
+ * destructure. `req.json()` parses the literal `null` successfully, so the
+ * JSON.parse try/catch never catches it — without this check, destructuring
+ * fields off `null` throws and the route 500s instead of returning a clean 400.
+ */
+export function invalidRequestBody(body: unknown): string | null {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return "Invalid request body"
+  }
+  return null
+}
+
 /** Returns an error message for an invalid field, or null if valid. */
 export function invalidStringField(
   value: unknown,
