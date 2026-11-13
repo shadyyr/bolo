@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAdapter } from "@/lib/ai"
 import { invalidRequestBody } from "@/lib/validate"
-import type { SupportedLanguage } from "@/types"
+import type { InputStyle, SupportedLanguage } from "@/types"
 
 export const runtime = "nodejs"
 // Transcribing a multi-minute clip can exceed the 10s default; Vercel Hobby
@@ -52,7 +52,7 @@ function looksLikeAudio(base64: string, mimeType: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  let body: { audio?: unknown; mimeType?: unknown; language?: unknown }
+  let body: { audio?: unknown; mimeType?: unknown; language?: unknown; inputStyle?: unknown }
   try {
     body = await req.json()
   } catch {
@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: bodyError }, { status: 400 })
   }
 
-  const { audio, mimeType, language } = body
+  const { audio, mimeType, language, inputStyle } = body
+  const resolvedStyle: InputStyle = inputStyle === "english" ? "english" : "native"
 
   if (typeof audio !== "string" || !audio) {
     return NextResponse.json({ error: "audio is required" }, { status: 400 })
@@ -93,7 +94,8 @@ export async function POST(req: NextRequest) {
     const { adapter } = getAdapter()
     const text = await adapter.transcribeAudio(
       { data: audio, mimeType: normalizedMimeType },
-      language as SupportedLanguage
+      language as SupportedLanguage,
+      resolvedStyle
     )
     // Empty text is a valid result: the clip contained no intelligible speech
     return NextResponse.json({ text })

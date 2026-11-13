@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { AlertCircle } from "lucide-react"
-import type { SupportedLanguage } from "@/types"
+import type { InputStyle, SupportedLanguage } from "@/types"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 
 interface Props {
   language: SupportedLanguage
+  inputStyle: InputStyle
   onTranscript: (text: string) => void
 }
 
@@ -56,7 +57,7 @@ const MIC_ERROR_MESSAGES: Record<string, string> = {
   NotReadableError: "The microphone is in use by another app. Please close it and try again.",
 }
 
-export default function VoiceInput({ language, onTranscript }: Props) {
+export default function VoiceInput({ language, inputStyle, onTranscript }: Props) {
   const [state, setState] = useState<RecState>("idle")
   const [elapsed, setElapsed] = useState(0)
   const [error, setError] = useState("")
@@ -68,6 +69,8 @@ export default function VoiceInput({ language, onTranscript }: Props) {
   useEffect(() => { onTranscriptRef.current = onTranscript }, [onTranscript])
   const languageRef = useRef(language)
   useEffect(() => { languageRef.current = language }, [language])
+  const inputStyleRef = useRef(inputStyle)
+  useEffect(() => { inputStyleRef.current = inputStyle }, [inputStyle])
 
   const recorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -178,6 +181,7 @@ export default function VoiceInput({ language, onTranscript }: Props) {
           audio: base64,
           mimeType: (blob.type.split(";")[0] || "audio/webm").trim(),
           language: languageRef.current,
+          inputStyle: inputStyleRef.current,
         }),
       })
       const data: { text?: string; error?: string } = await res.json()
@@ -234,8 +238,9 @@ export default function VoiceInput({ language, onTranscript }: Props) {
 
       {state === "recording" && !error && (
         <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm leading-relaxed text-stone-600">
-          Speak naturally in your language. English words or whole English sentences
-          are fine. We&apos;ll write down all of it.
+          {inputStyle === "english"
+            ? "Speak in your own English. Don't worry about grammar. If you don't know a word, say it in your language."
+            : "Speak naturally in your language. English words or whole English sentences are fine. We'll write down all of it."}
         </div>
       )}
 

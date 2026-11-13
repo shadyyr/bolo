@@ -2,6 +2,7 @@ import type {
   AudioClip,
   ExtractedEmailContext,
   GenerateEmailParams,
+  InputStyle,
   RefineEmailParams,
   SupportedLanguage,
   UploadedImage,
@@ -14,5 +15,5 @@ export interface AIAdapter {
   refineEmail(params: RefineEmailParams): Promise<string>
   // Returns the transcript, or "" when the clip contains no intelligible
   // speech — an empty transcript is a valid outcome, not an error
-  transcribeAudio(audio: AudioClip, language: SupportedLanguage): Promise<string>
+  transcribeAudio(audio: AudioClip, language: SupportedLanguage, inputStyle: InputStyle): Promise<string>
 }

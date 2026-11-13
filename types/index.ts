@@ -2,6 +2,12 @@ export type SupportedLanguage = "bn" | "es" | "gu"
 
 export type EmailMode = "reply" | "compose"
 
+// How the user expresses themselves:
+// - "native": in their own language, possibly with English words mixed in
+// - "english": in imperfect English, possibly with words from their own
+//   language mixed in
+export type InputStyle = "native" | "english"
+
 export type UploadedImage = {
   data: string // base64, no data URI prefix
   mediaType: "image/png" | "image/jpeg" | "image/webp"
@@ -34,6 +40,7 @@ export interface GenerateEmailParams {
   userInput: string
   language: SupportedLanguage
   mode: EmailMode
+  inputStyle: InputStyle
 }
 
 export interface RefineEmailParams {

@@ -3,6 +3,7 @@ import type {
   AudioClip,
   ExtractedEmailContext,
   GenerateEmailParams,
+  InputStyle,
   RefineEmailParams,
   SupportedLanguage,
   UploadedImage,
@@ -99,7 +100,7 @@ export const geminiAdapter: AIAdapter = {
     return generateText(prompt)
   },
 
-  async transcribeAudio(audio: AudioClip, language: SupportedLanguage): Promise<string> {
+  async transcribeAudio(audio: AudioClip, language: SupportedLanguage, inputStyle: InputStyle): Promise<string> {
     // Doesn't reuse generateText: an empty result here means "no speech in
     // the clip", which is a valid transcript — not a failure that should
     // trigger the provider fallback
@@ -111,7 +112,7 @@ export const geminiAdapter: AIAdapter = {
           role: "user",
           parts: [
             { inlineData: { mimeType: audio.mimeType, data: audio.data } },
-            { text: buildTranscribePrompt(language) },
+            { text: buildTranscribePrompt(language, inputStyle) },
           ],
         },
       ],

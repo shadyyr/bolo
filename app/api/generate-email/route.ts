@@ -3,7 +3,7 @@ import { getAdapter } from "@/lib/ai"
 import { detectPromptInjection } from "@/lib/detect-injection"
 import { stripMarkdown } from "@/lib/sanitize-email"
 import { invalidRequestBody, invalidStringField, sanitizeTerms } from "@/lib/validate"
-import type { EmailMode, GenerateEmailParams, SupportedLanguage } from "@/types"
+import type { EmailMode, GenerateEmailParams, InputStyle, SupportedLanguage } from "@/types"
 
 export const runtime = "nodejs"
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: bodyError }, { status: 400 })
   }
 
-  const { emailContext, importantTerms, userInput, language, mode } = body
+  const { emailContext, importantTerms, userInput, language, mode, inputStyle } = body
 
   const fieldError =
     invalidStringField(userInput, "userInput", { required: true, maxLength: 5000 }) ??
@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
   }
 
   const resolvedMode: EmailMode = mode === "compose" ? "compose" : "reply"
+  const resolvedStyle: InputStyle = inputStyle === "english" ? "english" : "native"
 
   if (resolvedMode === "reply" && !emailContext?.trim()) {
     return NextResponse.json({ error: "emailContext is required for reply mode" }, { status: 400 })
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
       userInput: userInput as string,
       language,
       mode: resolvedMode,
+      inputStyle: resolvedStyle,
     })
     return NextResponse.json({ email: stripMarkdown(email), model: provider.name })
   } catch (err) {

@@ -34,10 +34,10 @@ export function getAdapter() {
       tryWithFallback(() => gemini.generateEmail(params), () => openai.generateEmail(params), "generateEmail"),
     refineEmail: (params) =>
       tryWithFallback(() => gemini.refineEmail(params), () => openai.refineEmail(params), "refineEmail"),
-    transcribeAudio: (audio, language) =>
+    transcribeAudio: (audio, language, inputStyle) =>
       tryWithFallback(
-        () => gemini.transcribeAudio(audio, language),
-        () => openai.transcribeAudio(audio, language),
+        () => gemini.transcribeAudio(audio, language, inputStyle),
+        () => openai.transcribeAudio(audio, language, inputStyle),
         "transcribeAudio"
       ),
   }

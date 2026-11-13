@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react"
 import { AlertCircle } from "lucide-react"
-import type { SupportedLanguage } from "@/types"
+import type { InputStyle, SupportedLanguage } from "@/types"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ interface Props {
   email: string
   emailContext: string
   language: SupportedLanguage
+  inputStyle: InputStyle
   initialModel: string
   onRefined: (email: string, model: string) => void
   onBack: () => void
@@ -23,6 +24,7 @@ export default function StepReview({
   email,
   emailContext,
   language,
+  inputStyle,
   initialModel,
   onRefined,
   onBack,
@@ -163,7 +165,7 @@ export default function StepReview({
               className="min-h-24 bg-white p-3"
             />
 
-            <VoiceInput language={language} onTranscript={handleVoiceRefinement} />
+            <VoiceInput language={language} inputStyle={inputStyle} onTranscript={handleVoiceRefinement} />
 
             {error && (
               <Alert variant="destructive" className="border-red-200 bg-red-50">

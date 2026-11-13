@@ -3,6 +3,7 @@ import type {
   AudioClip,
   ExtractedEmailContext,
   GenerateEmailParams,
+  InputStyle,
   RefineEmailParams,
   SupportedLanguage,
   UploadedImage,
@@ -105,9 +106,15 @@ export const openaiAdapter: AIAdapter = {
     return generateText(buildRefinePrompt(params))
   },
 
-  async transcribeAudio(audio: AudioClip, _language: SupportedLanguage): Promise<string> {
-    // Whisper auto-detects languages per segment, which is exactly what
-    // mixed native/English speech needs — no language hint passed on purpose
+  async transcribeAudio(audio: AudioClip, _language: SupportedLanguage, inputStyle: InputStyle): Promise<string> {
+    // Native style: Whisper auto-detects languages per segment, which is
+    // exactly what mixed native/English speech needs — no language hint passed
+    // on purpose.
+    // English style: pin the language to English. Left to auto-detect, Whisper
+    // tends to mistake heavily accented English for the speaker's first
+    // language and writes the whole clip in that script. The cost is that the
+    // occasional native word comes out spelled phonetically in Latin letters,
+    // which the generation prompt is told to expect.
     const client = getClient()
     const ext = AUDIO_EXTENSIONS[audio.mimeType] ?? "webm"
     const file = await toFile(Buffer.from(audio.data, "base64"), `clip.${ext}`, {
@@ -116,6 +123,7 @@ export const openaiAdapter: AIAdapter = {
     const response = await client.audio.transcriptions.create({
       file,
       model: "whisper-1",
+      ...(inputStyle === "english" ? { language: "en" } : {}),
     })
     return response.text.trim()
   },

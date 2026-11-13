@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
-import type { EmailMode, Step, SupportedLanguage } from "@/types"
+import type { EmailMode, InputStyle, Step, SupportedLanguage } from "@/types"
 import StepUpload from "@/components/StepUpload"
 import StepContext from "@/components/StepContext"
 import StepInput from "@/components/StepInput"
@@ -26,6 +26,7 @@ export default function Home() {
   const [emailContext, setEmailContext] = useState("")
   const [importantTerms, setImportantTerms] = useState<string[]>([])
   const [language, setLanguage] = useState<SupportedLanguage>("bn")
+  const [inputStyle, setInputStyle] = useState<InputStyle>("native")
   const [userInput, setUserInput] = useState("")
   const [generatedEmail, setGeneratedEmail] = useState("")
   const [lastModel, setLastModel] = useState("")
@@ -161,7 +162,7 @@ export default function Home() {
                 Write professional emails in English
               </h1>
               <p className="text-stone-500 text-base leading-relaxed">
-                Tell us what you want to say in your language. We&apos;ll write it for you.
+                Tell us what you want to say, in your language or in your own English. We&apos;ll write it for you.
               </p>
             </div>
 
@@ -248,6 +249,8 @@ export default function Home() {
                   importantTerms={importantTerms}
                   language={language}
                   onLanguageChange={setLanguage}
+                  inputStyle={inputStyle}
+                  onInputStyleChange={setInputStyle}
                   userInput={userInput}
                   onUserInputChange={guard(setUserInput)}
                   onGenerate={guard((email, model) => {
@@ -264,6 +267,7 @@ export default function Home() {
                   email={generatedEmail}
                   emailContext={emailContext}
                   language={language}
+                  inputStyle={inputStyle}
                   initialModel={lastModel}
                   onRefined={guard((email, model) => {
                     setGeneratedEmail(email)
